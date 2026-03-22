@@ -11,7 +11,10 @@ export interface FeedMatch {
   teamB: string
   eventName: string
   format: 'bo1' | 'bo3' | 'bo5'
-  games: FeedGameEntry[]   // ALWAYS has maxGames entries (1/3/5) -- padded server-side
+  youtubeVideoId?: string  // Single VOD for the whole series (e.g., Caedrel costreams)
+  channelName?: string     // Channel that uploaded the VOD
+  watched?: boolean        // Whether this single VOD has been watched
+  games?: FeedGameEntry[]  // Per-game VODs (for channels that upload separately)
 }
 
 export interface FeedDay {

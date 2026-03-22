@@ -23,128 +23,105 @@ function dateStrOffset(daysAgo: number): string {
 }
 
 export function getMockFeed(): FeedDay[] {
-  const todayStr = dateStrOffset(0)
-  const yesterdayStr = dateStrOffset(1)
-  const twoDaysAgoStr = dateStrOffset(2)
-
-  const todayMatches: FeedMatch[] = [
-    {
-      id: 'lck-2026-w5-t1-geng',
-      teamA: 'T1',
-      teamB: 'Gen.G',
-      eventName: 'LCK Spring 2026 Week 5',
-      format: 'bo3',
-      games: [
-        { gameNumber: 1, youtubeVideoId: 'dQw4w9WgXcQ', channelName: 'Caedrel', watched: true },
-        { gameNumber: 2, youtubeVideoId: 'xvFZjo5PgG0', channelName: 'Caedrel', watched: false },
-        { gameNumber: 3, youtubeVideoId: undefined, channelName: undefined, watched: false },
-      ],
-    },
-    {
-      id: 'lcs-2026-w3-c9-fly',
-      teamA: 'Cloud9',
-      teamB: 'FlyQuest',
-      eventName: 'LCS Spring 2026 Week 3',
-      format: 'bo1',
-      games: [
-        { gameNumber: 1, youtubeVideoId: 'oHg5SJYRHA0', channelName: 'LCS', watched: false },
-      ],
-    },
-    {
-      id: 'lec-2026-po-g2-fnc',
-      teamA: 'G2 Esports',
-      teamB: 'Fnatic',
-      eventName: 'LEC Winter 2026 Playoffs',
-      format: 'bo5',
-      games: [
-        { gameNumber: 1, youtubeVideoId: 'ZZ5LpwO-An4', channelName: 'LEC', watched: false },
-        { gameNumber: 2, youtubeVideoId: 'L_jWHffIx5E', channelName: 'LEC', watched: false },
-        { gameNumber: 3, youtubeVideoId: undefined, channelName: undefined, watched: false },
-        { gameNumber: 4, youtubeVideoId: undefined, channelName: undefined, watched: false },
-        { gameNumber: 5, youtubeVideoId: undefined, channelName: undefined, watched: false },
-      ],
-    },
-  ]
-
-  const yesterdayMatches: FeedMatch[] = [
-    {
-      id: 'lck-2026-w5-blg-wb',
-      teamA: 'BLG',
-      teamB: 'Weibo Gaming',
-      eventName: 'LCK Spring 2026 Week 5',
-      format: 'bo3',
-      games: [
-        { gameNumber: 1, youtubeVideoId: 'fJ9rUzIMcZQ', channelName: 'Caedrel', watched: true },
-        { gameNumber: 2, youtubeVideoId: 'kffacxfA7G4', channelName: 'Caedrel', watched: true },
-        { gameNumber: 3, youtubeVideoId: 'nfWlot6h_JM', channelName: 'Caedrel', watched: false },
-      ],
-    },
-    {
-      id: 'lcs-2026-w3-fly-c9-2',
-      teamA: 'FlyQuest',
-      teamB: 'Cloud9',
-      eventName: 'LCS Spring 2026 Week 3',
-      format: 'bo1',
-      games: [
-        { gameNumber: 1, youtubeVideoId: 'hY7m5jjJ9ss', channelName: 'LCS', watched: false },
-      ],
-    },
-  ]
-
-  const twoDaysAgoMatches: FeedMatch[] = [
-    {
-      id: 'lec-2026-po-g2-fnc-sf',
-      teamA: 'G2 Esports',
-      teamB: 'Fnatic',
-      eventName: 'LEC Winter 2026 Playoffs',
-      format: 'bo5',
-      games: [
-        { gameNumber: 1, youtubeVideoId: 'J---aiyznGQ', channelName: 'LEC', watched: true },
-        { gameNumber: 2, youtubeVideoId: 'dQw4w9WgXcQ', channelName: 'LEC', watched: true },
-        { gameNumber: 3, youtubeVideoId: 'xvFZjo5PgG0', channelName: 'LEC', watched: true },
-        { gameNumber: 4, youtubeVideoId: 'oHg5SJYRHA0', channelName: 'LEC', watched: false },
-        { gameNumber: 5, youtubeVideoId: undefined, channelName: undefined, watched: false },
-      ],
-    },
-    {
-      id: 'lck-2026-w4-t1-wb',
-      teamA: 'T1',
-      teamB: 'Weibo Gaming',
-      eventName: 'LCK Spring 2026 Week 5',
-      format: 'bo3',
-      games: [
-        { gameNumber: 1, youtubeVideoId: 'ZZ5LpwO-An4', channelName: 'Caedrel', watched: true },
-        { gameNumber: 2, youtubeVideoId: 'L_jWHffIx5E', channelName: 'Caedrel', watched: true },
-        { gameNumber: 3, youtubeVideoId: 'fJ9rUzIMcZQ', channelName: 'Caedrel', watched: true },
-      ],
-    },
-    {
-      id: 'lcs-2026-w2-c9-fly',
-      teamA: 'Cloud9',
-      teamB: 'FlyQuest',
-      eventName: 'LCS Spring 2026 Week 3',
-      format: 'bo1',
-      games: [
-        { gameNumber: 1, youtubeVideoId: 'kffacxfA7G4', channelName: 'LCS', watched: true },
-      ],
-    },
-  ]
+  const todayStr = dateStrOffset(0)       // Mar 22
+  const yesterdayStr = dateStrOffset(1)    // Mar 21
+  const twoDaysAgoStr = dateStrOffset(2)   // Mar 20
+  const threeDaysAgoStr = dateStrOffset(3) // Mar 19
 
   return [
     {
       date: todayStr,
       label: getDateLabel(todayStr),
-      matches: todayMatches,
+      matches: [
+        {
+          id: 'fs-2026-finals-g2-blg',
+          teamA: 'G2 Esports',
+          teamB: 'BLG',
+          eventName: 'First Stand 2026 Grand Finals',
+          format: 'bo5',
+          youtubeVideoId: 'eJOk4VN2fAE',
+          channelName: 'Caedrel',
+          watched: false,
+        },
+      ],
     },
     {
       date: yesterdayStr,
       label: getDateLabel(yesterdayStr),
-      matches: yesterdayMatches,
+      matches: [
+        {
+          id: 'fs-2026-sf-jdg-blg',
+          teamA: 'JDG',
+          teamB: 'BLG',
+          eventName: 'First Stand 2026 Semifinals',
+          format: 'bo3',
+          youtubeVideoId: 'bj_DGC9tBmY',
+          channelName: 'Caedrel',
+          watched: false,
+        },
+        {
+          id: 'fs-2026-sf-g2-geng',
+          teamA: 'G2 Esports',
+          teamB: 'Gen.G',
+          eventName: 'First Stand 2026 Semifinals',
+          format: 'bo3',
+          youtubeVideoId: 'PdYOkY9Xfno',
+          channelName: 'Caedrel',
+          watched: false,
+        },
+        {
+          id: 'fs-2026-ko-lyon-jdg',
+          teamA: 'Lyon Gaming',
+          teamB: 'JDG',
+          eventName: 'First Stand 2026 Knockout',
+          format: 'bo1',
+          youtubeVideoId: 'sV3UKUWHMv4',
+          channelName: 'Caedrel',
+          watched: false,
+        },
+      ],
     },
     {
       date: twoDaysAgoStr,
       label: getDateLabel(twoDaysAgoStr),
-      matches: twoDaysAgoMatches,
+      matches: [
+        {
+          id: 'fs-2026-ko-g2-fearx',
+          teamA: 'G2 Esports',
+          teamB: 'FearX',
+          eventName: 'First Stand 2026 Knockout',
+          format: 'bo1',
+          youtubeVideoId: 'tgPyvPIEJxs',
+          channelName: 'Caedrel',
+          watched: false,
+        },
+      ],
+    },
+    {
+      date: threeDaysAgoStr,
+      label: getDateLabel(threeDaysAgoStr),
+      matches: [
+        {
+          id: 'fs-2026-grp-loud-jdg',
+          teamA: 'LOUD',
+          teamB: 'JDG',
+          eventName: 'First Stand 2026 Groups',
+          format: 'bo1',
+          youtubeVideoId: 'ufzqmH9GjtI',
+          channelName: 'Caedrel',
+          watched: true,
+        },
+        {
+          id: 'fs-2026-grp-geng-lyon',
+          teamA: 'Gen.G',
+          teamB: 'Lyon Gaming',
+          eventName: 'First Stand 2026 Groups',
+          format: 'bo1',
+          youtubeVideoId: 'cg6sbrSzVms',
+          channelName: 'Caedrel',
+          watched: true,
+        },
+      ],
     },
   ]
 }
