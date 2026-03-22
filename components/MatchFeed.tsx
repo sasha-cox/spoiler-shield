@@ -4,9 +4,10 @@ import { GameList } from '@/components/GameList'
 
 interface MatchFeedProps {
   days: FeedDay[]
+  onPlay?: (youtubeVideoId: string) => void
 }
 
-export function MatchFeed({ days }: MatchFeedProps) {
+export function MatchFeed({ days, onPlay }: MatchFeedProps) {
   if (days.length === 0) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -30,7 +31,7 @@ export function MatchFeed({ days }: MatchFeedProps) {
             {day.matches.map((match) => (
               <div key={match.id} className="flex flex-col gap-2">
                 <MatchCard match={match} />
-                <GameList games={match.games} />
+                <GameList games={match.games} onPlay={onPlay} />
               </div>
             ))}
           </div>
