@@ -18,6 +18,35 @@ const TEAM_ALIASES: Record<string, string[]> = {
   'TSW': ['TSW', 'Team Spirit Wolves'],
   'Hanwha Life Esports': ['Hanwha Life Esports', 'HLE'],
   'KT Rolster': ['KT Rolster', 'KT'],
+  // NA
+  'Team Liquid': ['Team Liquid', 'TL'],
+  '100 Thieves': ['100 Thieves', '100T'],
+  'Dignitas': ['Dignitas', 'DIG'],
+  'NRG': ['NRG'],
+  'Evil Geniuses': ['Evil Geniuses', 'EG'],
+  'Immortals': ['Immortals', 'IMT'],
+  // EU
+  'MAD Lions': ['MAD Lions', 'MAD'],
+  'Rogue': ['Rogue', 'RGE'],
+  'Team Heretics': ['Team Heretics', 'TH'],
+  'SK Gaming': ['SK Gaming', 'SK'],
+  'Astralis': ['Astralis', 'AST'],
+  // CN
+  'Top Esports': ['Top Esports', 'TES'],
+  'EDward Gaming': ['EDward Gaming', 'EDG'],
+  'Royal Never Give Up': ['Royal Never Give Up', 'RNG'],
+  'LNG Esports': ['LNG Esports', 'LNG'],
+  'OMG': ['OMG'],
+  // KR
+  'DRX': ['DRX'],
+  'Kwangdong Freecs': ['Kwangdong Freecs', 'KDF'],
+  'Nongshim RedForce': ['Nongshim RedForce', 'NS'],
+  'Liiv SANDBOX': ['Liiv SANDBOX', 'LSB'],
+  // BR
+  'paiN Gaming': ['paiN Gaming', 'paiN', 'PAIN'],
+  'FURIA': ['FURIA'],
+  'RED Canids': ['RED Canids', 'RED'],
+  'KaBuM': ['KaBuM', 'KBM'],
 }
 
 // Build reverse lookup: alias (lowercase) -> canonical name

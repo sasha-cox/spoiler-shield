@@ -4,6 +4,7 @@ import { FeedClient } from '@/components/FeedClient'
 import { getRecentUploads } from '@/lib/youtube'
 import { MONITORED_CHANNELS } from '@/lib/config'
 import { extractTeamsFromTitle } from '@/lib/team-aliases'
+import { getRegion } from '@/lib/regions'
 import type { FeedDay, FeedMatch } from '@/lib/types'
 
 function getDateLabel(dateStr: string): string {
@@ -58,7 +59,7 @@ async function fetchFeed(): Promise<FeedDay[]> {
 
   const allUploads: { videoId: string; title: string; publishedAt: Date; channelName: string }[] = []
   for (const channel of MONITORED_CHANNELS) {
-    const uploads = await getRecentUploads(channel.youtubeChannelId, apiKey, 20)
+    const uploads = await getRecentUploads(channel.youtubeChannelId, apiKey, 30)
     for (const upload of uploads) {
       allUploads.push({ ...upload, channelName: channel.name })
     }
@@ -68,15 +69,20 @@ async function fetchFeed(): Promise<FeedDay[]> {
   for (const upload of allUploads) {
     const teams = extractTeams(upload.title)
     if (!teams) continue
+    const eventName = extractEventName(upload.title, teams.teamA, teams.teamB)
+    const region = getRegion(teams.teamA, teams.teamB, eventName)
     matches.push({
       id: upload.videoId,
       teamA: teams.teamA,
       teamB: teams.teamB,
-      eventName: extractEventName(upload.title, teams.teamA, teams.teamB),
+      eventName,
       format: guessFormat(upload.title),
       youtubeVideoId: upload.videoId,
       channelName: upload.channelName,
       watched: false,
+      region: region.shortCode,
+      regionFlag: region.flag,
+      regionColor: region.color,
       _date: upload.publishedAt.toISOString().slice(0, 10),
     })
   }

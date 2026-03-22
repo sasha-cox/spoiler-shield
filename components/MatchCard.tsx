@@ -70,6 +70,14 @@ export function MatchCard({ match, onPlay }: MatchCardProps) {
               Watched
             </Badge>
           )}
+          {match.region && (
+            <span
+              className="rounded-full px-2 py-0.5 text-xs font-medium"
+              style={{ backgroundColor: `${match.regionColor}20`, color: match.regionColor }}
+            >
+              {match.regionFlag} {match.region}
+            </span>
+          )}
           <Badge
             className="bg-[#D4A843]/15 text-[#D4A843] border-[#D4A843]/20"
           >
@@ -105,6 +113,11 @@ export function MatchCard({ match, onPlay }: MatchCardProps) {
 
         {/* Event name */}
         <p className="text-center text-xs text-zinc-500 mb-3">{eventDisplay}</p>
+
+        {/* Channel source */}
+        {match.channelName && (
+          <p className="mt-2 text-center text-xs text-zinc-500">via {match.channelName}</p>
+        )}
 
         {/* Watch link */}
         {match.youtubeVideoId && (
