@@ -5,8 +5,8 @@ interface FilterBarProps {
 }
 
 export function FilterBar({ channels, activeFilter, onFilterChange }: FilterBarProps) {
-  const activeClasses = 'bg-blue-600 text-white'
-  const inactiveClasses = 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-300'
+  const activeClasses = 'bg-[#D4A843] text-black'
+  const inactiveClasses = 'bg-[#1a1a1a] text-[#8A8A8A] hover:bg-[#252525] hover:text-white'
 
   return (
     <div className="overflow-x-auto flex gap-2 py-2 scrollbar-none">
