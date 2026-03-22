@@ -1,36 +1,11 @@
 'use client'
 
-import { useState } from 'react'
 import type { FeedMatch } from '@/lib/types'
-
-/**
- * Deterministically pick a color for a team name by hashing the string.
- * Returns a Tailwind bg-color class from a curated set of vibrant colors.
- */
-const TEAM_COLORS = [
-  'bg-red-600',
-  'bg-blue-600',
-  'bg-green-600',
-  'bg-yellow-600',
-  'bg-purple-600',
-  'bg-pink-600',
-  'bg-indigo-600',
-  'bg-teal-600',
-  'bg-orange-600',
-  'bg-cyan-600',
-] as const
-
-function hashString(str: string): number {
-  let hash = 0
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash * 31 + str.charCodeAt(i)) | 0
-  }
-  return Math.abs(hash)
-}
-
-function teamColor(name: string): string {
-  return TEAM_COLORS[hashString(name) % TEAM_COLORS.length]
-}
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Play } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 function formatLabel(format: FeedMatch['format']): string {
   switch (format) {
@@ -43,72 +18,111 @@ function formatLabel(format: FeedMatch['format']): string {
   }
 }
 
+/** Convert ALL CAPS event names to Title Case, preserving short numbers/years */
+function toTitleCase(str: string): string {
+  return str
+    .toLowerCase()
+    .split(' ')
+    .map((word) => {
+      if (/^\d+$/.test(word)) return word
+      return word.charAt(0).toUpperCase() + word.slice(1)
+    })
+    .join(' ')
+}
+
+/** Extract a short abbreviation from a team name (e.g. "G2 Esports" → "G2") */
+function teamAbbr(name: string): string {
+  // If the name is already short (3 chars or less), use it as-is
+  if (name.length <= 3) return name.toUpperCase()
+  // If it has multiple words, take the first word (covers "G2 Esports", "T1", "Gen.G" etc.)
+  const firstWord = name.split(/\s+/)[0]
+  if (firstWord.length <= 4) return firstWord.toUpperCase()
+  // Fallback: take first 3 characters
+  return name.slice(0, 3).toUpperCase()
+}
+
 interface MatchCardProps {
   match: FeedMatch
   onPlay?: (youtubeVideoId: string) => void
 }
 
 export function MatchCard({ match, onPlay }: MatchCardProps) {
-  const [showPlayer, setShowPlayer] = useState(false)
-  const teamAInitial = match.teamA.charAt(0).toUpperCase()
-  const teamBInitial = match.teamB.charAt(0).toUpperCase()
-
-  const handleWatch = () => {
-    if (match.youtubeVideoId) {
-      onPlay?.(match.youtubeVideoId)
-    }
-  }
+  const eventDisplay = match.eventName === match.eventName.toUpperCase()
+    ? toTitleCase(match.eventName)
+    : match.eventName
 
   return (
-    <div
+    <Card
       data-testid="match-card"
-      className={`w-full rounded-xl border border-[#1a1a1a] border-l-2 border-l-[#D4A843] bg-[#141414] p-4 relative${match.watched ? ' opacity-40' : ''}`}
-    >
-      {/* Format badge */}
-      <span className="absolute top-3 right-3 rounded-full bg-[#D4A843]/20 px-2.5 py-0.5 text-xs font-medium text-[#D4A843]">
-        {formatLabel(match.format)}
-      </span>
-
-      {/* Teams row */}
-      <div className="flex items-center justify-center gap-4 py-2">
-        {/* Team A */}
-        <div className="flex items-center gap-2">
-          <div
-            data-testid="team-initial"
-            className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white ring-2 ring-current/20 ${teamColor(match.teamA)}`}
-          >
-            {teamAInitial}
-          </div>
-          <span className="text-lg font-semibold text-white">{match.teamA}</span>
-        </div>
-
-        {/* Divider */}
-        <span className="text-sm font-medium text-zinc-500">vs</span>
-
-        {/* Team B */}
-        <div className="flex items-center gap-2">
-          <div
-            data-testid="team-initial"
-            className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white ring-2 ring-current/20 ${teamColor(match.teamB)}`}
-          >
-            {teamBInitial}
-          </div>
-          <span className="text-lg font-semibold text-white">{match.teamB}</span>
-        </div>
-      </div>
-
-      {/* Event name */}
-      <p className="mt-1 text-center text-sm text-zinc-400">{match.eventName}</p>
-
-      {/* Watch link -- plain <a> tag, works everywhere, no JS needed */}
-      {match.youtubeVideoId && (
-        <a
-          href={`/watch/${match.youtubeVideoId}`}
-          className="mt-3 block w-full rounded-lg bg-gradient-to-r from-amber-600 to-yellow-600 py-2.5 text-sm font-semibold text-white text-center transition-colors hover:from-amber-500 hover:to-yellow-500"
-        >
-          Watch
-        </a>
+      className={cn(
+        'relative border-l-2 border-l-[#D4A843] bg-[#141414] ring-[#1a1a1a]',
+        match.watched && 'opacity-40'
       )}
-    </div>
+    >
+      <CardContent className="relative pt-1 pb-1">
+        {/* Format badge + watched badge */}
+        <div className="absolute top-0 right-0 flex items-center gap-1.5">
+          {match.watched && (
+            <Badge
+              variant="secondary"
+              className="bg-zinc-700/60 text-zinc-400 text-[10px] uppercase tracking-wider"
+            >
+              Watched
+            </Badge>
+          )}
+          <Badge
+            className="bg-[#D4A843]/15 text-[#D4A843] border-[#D4A843]/20"
+          >
+            {formatLabel(match.format)}
+          </Badge>
+        </div>
+
+        {/* Teams row */}
+        <div className="flex items-center justify-center gap-5 py-3 mt-2">
+          {/* Team A */}
+          <div className="flex flex-col items-center gap-0.5 min-w-[80px]">
+            <span className="text-xl font-bold text-white tracking-wide">
+              {teamAbbr(match.teamA)}
+            </span>
+            <span className="text-xs text-zinc-500 truncate max-w-[100px]">
+              {match.teamA}
+            </span>
+          </div>
+
+          {/* Divider */}
+          <span className="text-xs font-semibold text-zinc-600 uppercase tracking-widest">vs</span>
+
+          {/* Team B */}
+          <div className="flex flex-col items-center gap-0.5 min-w-[80px]">
+            <span className="text-xl font-bold text-white tracking-wide">
+              {teamAbbr(match.teamB)}
+            </span>
+            <span className="text-xs text-zinc-500 truncate max-w-[100px]">
+              {match.teamB}
+            </span>
+          </div>
+        </div>
+
+        {/* Event name */}
+        <p className="text-center text-xs text-zinc-500 mb-3">{eventDisplay}</p>
+
+        {/* Watch link */}
+        {match.youtubeVideoId && (
+          <a
+            href={`/watch/${match.youtubeVideoId}`}
+            className="block w-full"
+          >
+            <Button
+              className="w-full bg-gradient-to-r from-[#D4A843] to-[#b8912e] text-black font-semibold hover:from-[#e0b84d] hover:to-[#c9a035] cursor-pointer"
+              size="lg"
+              render={<span />}
+            >
+              <Play className="size-4 fill-current" />
+              Watch
+            </Button>
+          </a>
+        )}
+      </CardContent>
+    </Card>
   )
 }

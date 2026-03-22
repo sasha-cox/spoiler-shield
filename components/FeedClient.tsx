@@ -5,6 +5,9 @@ import { signOut } from 'next-auth/react'
 import { FilterBar } from '@/components/FilterBar'
 import { MatchFeed } from '@/components/MatchFeed'
 import { markWatched, getWatchedVods } from '@/lib/watched-store'
+import { Button } from '@/components/ui/button'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import { Shield, RefreshCw, LogOut } from 'lucide-react'
 import type { FeedDay } from '@/lib/types'
 
 function applyWatchedState(days: FeedDay[], watched: Set<string>): FeedDay[] {
@@ -83,32 +86,45 @@ export function FeedClient({ initialFeed, userName, userEmail, userImage }: { in
   return (
     <div className="flex flex-col flex-1 max-w-lg mx-auto w-full">
       <header className="flex items-center justify-between px-4 py-4 border-b border-[#D4A843]/20">
-        <h1 className="font-[family-name:var(--font-oswald)] text-2xl font-bold text-white">Spoiler Shield</h1>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
+          <Shield className="size-6 text-[#D4A843]" />
+          <h1 className="font-[family-name:var(--font-oswald)] text-2xl font-bold text-[#D4A843]">
+            Spoiler Shield
+          </h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleRefresh}
             aria-label="Refresh feed"
-            className="rounded-md bg-[#1a1a1a] px-3 py-1.5 text-sm font-medium text-[#8A8A8A] transition-colors hover:bg-[#252525] hover:text-white"
+            className="text-zinc-400 hover:text-white"
           >
-            Refresh
-          </button>
-          <div className="flex items-center gap-2 rounded-full bg-[#1a1a1a] pl-1 pr-3 py-1">
-            {userImage ? (
-              <img src={userImage} alt="" className="w-6 h-6 rounded-full" referrerPolicy="no-referrer" />
-            ) : (
-              <div className="w-6 h-6 rounded-full bg-zinc-600 flex items-center justify-center text-xs text-white font-bold">
+            <RefreshCw className="size-4" />
+            <span className="hidden sm:inline">Refresh</span>
+          </Button>
+
+          <div className="flex items-center gap-2 rounded-full bg-[#1a1a1a] pl-1 pr-2 py-1">
+            <Avatar size="sm">
+              {userImage ? (
+                <AvatarImage src={userImage} alt={userName ?? ''} referrerPolicy="no-referrer" />
+              ) : null}
+              <AvatarFallback className="bg-zinc-700 text-white text-[10px]">
                 {userName?.charAt(0)?.toUpperCase() ?? '?'}
-              </div>
-            )}
-            <span className="text-xs text-zinc-300 max-w-[150px] truncate">{userEmail ?? userName ?? 'User'}</span>
-            <button
-              type="button"
+              </AvatarFallback>
+            </Avatar>
+            <span className="text-xs text-zinc-300 max-w-[120px] truncate hidden sm:inline">
+              {userEmail ?? userName ?? 'User'}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon-xs"
               onClick={() => signOut({ callbackUrl: '/login' })}
-              className="text-xs text-zinc-500 hover:text-white transition-colors"
+              aria-label="Sign out"
+              className="text-zinc-500 hover:text-white"
             >
-              Sign out
-            </button>
+              <LogOut className="size-3.5" />
+            </Button>
           </div>
         </div>
       </header>

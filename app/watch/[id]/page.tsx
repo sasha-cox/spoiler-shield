@@ -1,3 +1,6 @@
+import { Button } from '@/components/ui/button'
+import { ArrowLeft } from 'lucide-react'
+
 export default async function WatchPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
@@ -5,11 +8,15 @@ export default async function WatchPage({ params }: { params: Promise<{ id: stri
     <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,#141414_0%,#0a0a0a_70%)] flex items-center justify-center">
       <div className="relative w-full max-w-6xl mx-4">
         <div className="flex justify-between items-center mb-3 px-1">
-          <a
-            href="/"
-            className="text-zinc-400 text-base font-medium hover:text-white transition-colors"
-          >
-            <span className="text-[#D4A843] mr-1">&larr;</span> Back to feed
+          <a href="/">
+            <Button
+              variant="ghost"
+              className="text-zinc-400 hover:text-white gap-1.5 px-2"
+              render={<span />}
+            >
+              <ArrowLeft className="size-4 text-[#D4A843]" />
+              Back to feed
+            </Button>
           </a>
         </div>
         <div className="relative w-full ring-1 ring-[#D4A843]/10 rounded-lg" style={{ paddingBottom: '56.25%' }}>
