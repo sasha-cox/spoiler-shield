@@ -22,10 +22,10 @@ app/page.tsx (Server Component)
   └── <FeedClient initialFeed={feed} />
 
 components/FeedClient.tsx (Client Component — state hub)
-  ├── Manages filter state, watched state, refresh
-  ├── <FilterBar /> — channel filtering pills
-  └── <MatchFeed /> — day-grouped animated list
-        └── <MatchCard /> — individual match with region badge, format, teams
+  ├── Manages multi-filter state (useReducer), watched/follow state, refresh
+  ├── <FilterBar /> — channels, regions, formats, search, watched toggle, team follow
+  └── <MatchFeed /> — day-grouped animated list with reduced-motion support
+        └── <MatchCard /> — individual match with region badge, format, teams, follow star
 
 app/api/feed/route.ts — Client-side refresh endpoint with in-memory cache (3 min TTL)
 app/watch/[id]/page.tsx — Full-screen YouTube embed player
@@ -45,7 +45,7 @@ app/login/page.tsx — Google OAuth sign-in
 
 ### Design System
 - **Theme:** Always dark mode (class `dark` on `<html>`). Black background with gold accents.
-- **Gold accent:** CSS variable `--gold: #D4A843`. Use Tailwind token `gold` (e.g., `text-gold`, `bg-gold`) once configured, or `var(--gold)` in inline styles.
+- **Gold accent:** CSS variable `--gold: #D4A843`. Use Tailwind token `gold` (e.g., `text-gold`, `bg-gold`). Also available: `surface`, `surface-border`, `text-secondary`, `gold-dim`.
 - **Display font:** Oswald (via `--font-oswald`). Apply with `.font-display` utility class.
 - **Body font:** Geist Sans (via `--font-geist-sans`).
 - **Components:** Use shadcn components from `components/ui/`. Use `cn()` from `lib/utils.ts` for conditional class merging.
@@ -61,6 +61,8 @@ app/login/page.tsx — Google OAuth sign-in
 - Team aliases map many spellings to canonical names (50+ teams across 6 regions).
 - Regions: KR, EU, NA, CN, BR, INT — each with flag emoji and badge color.
 - Watched state persists in browser localStorage (`spoiler-shield-watched` key).
+- Followed teams persist in browser localStorage (`spoiler-shield-follows` key).
+- Monitored channels: Caedrel, IWDominate, LS, LCK, LEC, LCS, LPL, CBLOL, LoL Esports.
 
 ## Commands
 
@@ -88,12 +90,14 @@ app/                    # Next.js App Router pages and API routes
 components/             # React components (FeedClient, FilterBar, MatchFeed, MatchCard, etc.)
 components/ui/          # shadcn base components (Button, Avatar, etc.)
 lib/                    # Shared utilities and data
+  feed-utils.ts         # Shared feed pipeline (filter, extract, dedup, group)
   config.ts             # Monitored YouTube channels
-  types.ts              # TypeScript interfaces (FeedMatch, FeedDay, FeedGameEntry)
-  youtube.ts            # YouTube API wrapper
+  types.ts              # TypeScript interfaces and filter types
+  youtube.ts            # YouTube API wrapper (typed)
   team-aliases.ts       # Team name normalization (canonical → aliases)
   regions.ts            # Region detection and metadata (flags, colors)
   watched-store.ts      # localStorage watched state manager
+  follow-store.ts       # localStorage team follow manager
   auth.ts               # NextAuth configuration
   utils.ts              # cn() utility
 __tests__/              # Test files mirroring source structure
