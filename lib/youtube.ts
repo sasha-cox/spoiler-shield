@@ -8,6 +8,19 @@ export interface YouTubeUpload {
   publishedAt: Date
 }
 
+interface YouTubePlaylistItem {
+  contentDetails?: { videoId?: string; videoPublishedAt?: string }
+  snippet?: {
+    title?: string
+    publishedAt?: string
+    resourceId?: { videoId?: string }
+  }
+}
+
+interface YouTubePlaylistResponse {
+  items?: YouTubePlaylistItem[]
+}
+
 export async function getRecentUploads(
   channelId: string,
   apiKey: string,
@@ -23,18 +36,18 @@ export async function getRecentUploads(
   try {
     const res = await fetch(url.toString())
     if (!res.ok) {
-      console.error('YouTube API error:', res.status)
+      console.error(`YouTube API error for channel ${channelId}:`, res.status)
       return []
     }
-    const data = await res.json()
+    const data: YouTubePlaylistResponse = await res.json()
 
-    return (data.items ?? []).map((item: any) => ({
-      videoId: item.contentDetails?.videoId ?? item.snippet?.resourceId?.videoId,
+    return (data.items ?? []).map((item) => ({
+      videoId: item.contentDetails?.videoId ?? item.snippet?.resourceId?.videoId ?? '',
       title: item.snippet?.title ?? '',
-      publishedAt: new Date(item.snippet?.publishedAt ?? item.contentDetails?.videoPublishedAt),
+      publishedAt: new Date(item.snippet?.publishedAt ?? item.contentDetails?.videoPublishedAt ?? 0),
     }))
   } catch (err) {
-    console.error('YouTube API fetch failed:', err)
+    console.error(`YouTube API fetch failed for channel ${channelId}:`, err)
     return []
   }
 }

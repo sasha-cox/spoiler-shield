@@ -19,7 +19,8 @@ const match: FeedMatch = {
 describe('MatchCard', () => {
   it('renders both team names', () => {
     render(<MatchCard match={match} />)
-    expect(screen.getByText('T1')).toBeInTheDocument()
+    // Team names appear in both abbreviated and full form
+    expect(screen.getAllByText('T1').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('Gen.G')).toBeInTheDocument()
   })
 
@@ -38,13 +39,12 @@ describe('MatchCard', () => {
     expect(screen.getByText('Bo3')).toBeInTheDocument()
   })
 
-  it('renders team initial circles for both teams', () => {
+  it('renders abbreviated team names for both teams', () => {
     render(<MatchCard match={match} />)
-    // Team initial circles should contain the first letter of each team name
-    const initials = screen.getAllByTestId('team-initial')
-    expect(initials).toHaveLength(2)
-    expect(initials[0]).toHaveTextContent('T')
-    expect(initials[1]).toHaveTextContent('G')
+    const container = screen.getByTestId('match-card')
+    // T1 is short enough to be used as-is, Gen.G abbreviates to GEN
+    expect(container.textContent).toContain('T1')
+    expect(container.textContent).toContain('GEN')
   })
 
   it('does NOT render any duration or timestamp text', () => {

@@ -79,6 +79,11 @@
 }
 
 @theme inline {
+  --color-gold: var(--gold);
+  --color-gold-dim: var(--gold-dim);
+  --color-surface: var(--surface);
+  --color-surface-border: var(--surface-border);
+  --color-text-secondary: var(--text-secondary);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);

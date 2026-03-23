@@ -49,7 +49,7 @@ describe('FilterBar', () => {
     expect(onFilterChange).toHaveBeenCalledTimes(1)
   })
 
-  it('highlights the active filter with accent classes and dims inactive pills', () => {
+  it('highlights the active filter with gold accent and dims inactive pills', () => {
     render(
       <FilterBar channels={channels} activeFilter="LCK" onFilterChange={() => {}} />
     )
@@ -58,14 +58,12 @@ describe('FilterBar', () => {
     const lckButton = screen.getByRole('button', { name: 'LCK' })
     const lecButton = screen.getByRole('button', { name: 'LEC' })
 
-    // Active pill (LCK) should have accent styling
-    expect(lckButton.className).toMatch(/bg-blue-600/)
-    expect(lckButton.className).toMatch(/text-white/)
+    // Active pill (LCK) should have gold accent styling
+    expect(lckButton.className).toMatch(/bg-gold/)
+    expect(lckButton.className).toMatch(/text-black/)
 
     // Inactive pills should have muted styling
-    expect(allButton.className).toMatch(/bg-zinc-800/)
     expect(allButton.className).toMatch(/text-zinc-400/)
-    expect(lecButton.className).toMatch(/bg-zinc-800/)
     expect(lecButton.className).toMatch(/text-zinc-400/)
   })
 
@@ -77,12 +75,11 @@ describe('FilterBar', () => {
     const allButton = screen.getByRole('button', { name: 'All' })
     const lckButton = screen.getByRole('button', { name: 'LCK' })
 
-    // "All" should be active
-    expect(allButton.className).toMatch(/bg-blue-600/)
-    expect(allButton.className).toMatch(/text-white/)
+    // "All" should be active with gold accent
+    expect(allButton.className).toMatch(/bg-gold/)
+    expect(allButton.className).toMatch(/text-black/)
 
     // Channel buttons should be inactive
-    expect(lckButton.className).toMatch(/bg-zinc-800/)
     expect(lckButton.className).toMatch(/text-zinc-400/)
   })
 

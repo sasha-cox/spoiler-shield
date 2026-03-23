@@ -55,7 +55,7 @@ export function MatchCard({ match, onPlay }: MatchCardProps) {
     <Card
       data-testid="match-card"
       className={cn(
-        'relative border-l-2 border-l-[#D4A843] bg-[#141414] ring-[#1a1a1a]',
+        'relative border-l-2 border-l-gold bg-surface ring-surface-border',
         match.watched && 'opacity-40'
       )}
     >
@@ -79,7 +79,7 @@ export function MatchCard({ match, onPlay }: MatchCardProps) {
             </span>
           )}
           <Badge
-            className="bg-[#D4A843]/15 text-[#D4A843] border-[#D4A843]/20"
+            className="bg-gold/15 text-gold border-gold/20"
           >
             {formatLabel(match.format)}
           </Badge>
@@ -124,7 +124,7 @@ export function MatchCard({ match, onPlay }: MatchCardProps) {
             className="block w-full"
           >
             <Button
-              className="w-full bg-gradient-to-r from-[#D4A843] to-[#b8912e] text-black font-semibold hover:from-[#e0b84d] hover:to-[#c9a035] cursor-pointer"
+              className="w-full bg-gradient-to-r from-gold to-[#b8912e] text-black font-semibold hover:from-[#e0b84d] hover:to-[#c9a035] cursor-pointer"
               size="lg"
               render={<span />}
             >

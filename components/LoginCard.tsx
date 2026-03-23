@@ -17,10 +17,10 @@ export function LoginCard({ signInAction }: LoginCardProps) {
       transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
       className="w-full max-w-sm"
     >
-      <Card className="bg-[#141414] ring-[#D4A843]/15 text-center">
+      <Card className="bg-surface ring-gold/15 text-center">
         <CardContent className="flex flex-col items-center py-8 px-6">
           {/* Shield icon */}
-          <Shield className="size-16 text-[#D4A843] mb-6" strokeWidth={1.5} />
+          <Shield className="size-16 text-gold mb-6" strokeWidth={1.5} />
 
           <h1 className="font-display text-3xl font-bold text-white uppercase tracking-widest mb-2">
             Spoiler Shield
@@ -30,7 +30,7 @@ export function LoginCard({ signInAction }: LoginCardProps) {
           <form action={signInAction} className="w-full">
             <Button
               type="submit"
-              className="w-full bg-white text-black font-semibold hover:bg-zinc-200 ring-1 ring-[#D4A843]/30 hover:ring-[#D4A843]/60 cursor-pointer h-11"
+              className="w-full bg-white text-black font-semibold hover:bg-zinc-200 ring-1 ring-gold/30 hover:ring-gold/60 cursor-pointer h-11"
               size="lg"
             >
               <svg className="size-5" viewBox="0 0 24 24">

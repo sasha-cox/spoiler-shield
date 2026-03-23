@@ -14,12 +14,12 @@ export default async function WatchPage({ params }: { params: Promise<{ id: stri
               className="text-zinc-400 hover:text-white gap-1.5 px-2"
               render={<span />}
             >
-              <ArrowLeft className="size-4 text-[#D4A843]" />
+              <ArrowLeft className="size-4 text-gold" />
               Back to feed
             </Button>
           </a>
         </div>
-        <div className="relative w-full ring-1 ring-[#D4A843]/10 rounded-lg" style={{ paddingBottom: '56.25%' }}>
+        <div className="relative w-full ring-1 ring-gold/10 rounded-lg" style={{ paddingBottom: '56.25%' }}>
           <iframe
             className="absolute inset-0 w-full h-full rounded-lg"
             src={`https://www.youtube.com/embed/${id}?autoplay=1&rel=0&modestbranding=1`}

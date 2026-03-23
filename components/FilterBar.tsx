@@ -19,7 +19,7 @@ export function FilterBar({ channels, activeFilter, onFilterChange }: FilterBarP
         className={cn(
           'shrink-0 rounded-full transition-colors',
           activeFilter === null
-            ? 'bg-[#D4A843] text-black border-[#D4A843] hover:bg-[#e0b84d] hover:text-black'
+            ? 'bg-gold text-black border-gold hover:bg-[#e0b84d] hover:text-black'
             : 'border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 bg-transparent'
         )}
       >
@@ -35,7 +35,7 @@ export function FilterBar({ channels, activeFilter, onFilterChange }: FilterBarP
           className={cn(
             'shrink-0 rounded-full transition-colors',
             activeFilter === channel
-              ? 'bg-[#D4A843] text-black border-[#D4A843] hover:bg-[#e0b84d] hover:text-black'
+              ? 'bg-gold text-black border-gold hover:bg-[#e0b84d] hover:text-black'
               : 'border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 bg-transparent'
           )}
         >

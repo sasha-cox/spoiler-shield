@@ -27,7 +27,7 @@ export function MatchFeed({ days, onPlay }: MatchFeedProps) {
   if (days.length === 0) {
     return (
       <div className="flex items-center justify-center py-20">
-        <p className="text-[#8A8A8A] text-xl">No VODs ready yet — <span className="text-[#D4A843]">check back soon</span></p>
+        <p className="text-text-secondary text-xl">No VODs ready yet — <span className="text-gold">check back soon</span></p>
       </div>
     )
   }

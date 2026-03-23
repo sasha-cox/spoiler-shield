@@ -94,15 +94,15 @@ describe('MatchFeed', () => {
     const matchCards = screen.getAllByTestId('match-card')
     expect(matchCards).toHaveLength(4)
 
-    // Verify specific team names appear
-    expect(screen.getByText('T1')).toBeInTheDocument()
+    // Verify specific team names appear (some appear multiple times as abbr + full name)
+    expect(screen.getAllByText('T1').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('Gen.G')).toBeInTheDocument()
-    expect(screen.getByText('DRX')).toBeInTheDocument()
-    expect(screen.getByText('KT')).toBeInTheDocument()
-    expect(screen.getByText('G2')).toBeInTheDocument()
-    expect(screen.getByText('FNC')).toBeInTheDocument()
-    expect(screen.getByText('C9')).toBeInTheDocument()
-    expect(screen.getByText('TL')).toBeInTheDocument()
+    expect(screen.getAllByText('DRX').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('KT').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('G2').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('FNC').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('C9').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('TL').length).toBeGreaterThanOrEqual(1)
   })
 
   it('renders GameList entries for each match', () => {
@@ -116,7 +116,7 @@ describe('MatchFeed', () => {
   it('shows "No VODs ready yet" empty state when feed has no data', () => {
     render(<MatchFeed days={[]} />)
 
-    expect(screen.getByText('No VODs ready yet')).toBeInTheDocument()
+    expect(screen.getByText(/No VODs ready yet/)).toBeInTheDocument()
     expect(screen.queryAllByTestId('match-card')).toHaveLength(0)
   })
 

@@ -8,6 +8,7 @@ import { markWatched, getWatchedVods } from '@/lib/watched-store'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Shield, RefreshCw, LogOut } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import type { FeedDay } from '@/lib/types'
 
 function applyWatchedState(days: FeedDay[], watched: Set<string>): FeedDay[] {
@@ -51,6 +52,7 @@ export function FeedClient({ initialFeed, userName, userEmail, userImage }: { in
     setWatchedSet(getWatchedVods())
   }, [])
   const [activeFilter, setActiveFilter] = useState<string | null>(null)
+  const [refreshError, setRefreshError] = useState(false)
 
   const channels = useMemo(() => extractChannels(rawFeed), [rawFeed])
 
@@ -72,23 +74,33 @@ export function FeedClient({ initialFeed, userName, userEmail, userImage }: { in
     [],
   )
 
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
   const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true)
+    setRefreshError(false)
     try {
       const res = await fetch('/api/feed')
       if (res.ok) {
         const data = await res.json()
         setRawFeed(data)
+      } else {
+        setRefreshError(true)
       }
-    } catch {}
+    } catch {
+      setRefreshError(true)
+    } finally {
+      setIsRefreshing(false)
+    }
     setWatchedSet(getWatchedVods())
   }, [])
 
   return (
     <div className="flex flex-col flex-1 max-w-lg mx-auto w-full">
-      <header className="flex items-center justify-between px-4 py-4 border-b border-[#D4A843]/20">
+      <header className="flex items-center justify-between px-4 py-4 border-b border-gold/20">
         <div className="flex items-center gap-2">
-          <Shield className="size-6 text-[#D4A843]" />
-          <h1 className="font-display text-2xl font-bold text-[#D4A843]">
+          <Shield className="size-6 text-gold" />
+          <h1 className="font-display text-2xl font-bold text-gold">
             Spoiler Shield
           </h1>
         </div>
@@ -97,14 +109,15 @@ export function FeedClient({ initialFeed, userName, userEmail, userImage }: { in
             variant="ghost"
             size="sm"
             onClick={handleRefresh}
+            disabled={isRefreshing}
             aria-label="Refresh feed"
             className="text-zinc-400 hover:text-white"
           >
-            <RefreshCw className="size-4" />
+            <RefreshCw className={cn('size-4', isRefreshing && 'animate-spin')} />
             <span className="hidden sm:inline">Refresh</span>
           </Button>
 
-          <div className="flex items-center gap-2 rounded-full bg-[#1a1a1a] pl-1 pr-2 py-1">
+          <div className="flex items-center gap-2 rounded-full bg-surface-border pl-1 pr-2 py-1">
             <Avatar size="sm">
               {userImage ? (
                 <AvatarImage src={userImage} alt={userName ?? ''} referrerPolicy="no-referrer" />
@@ -136,6 +149,12 @@ export function FeedClient({ initialFeed, userName, userEmail, userImage }: { in
           onFilterChange={setActiveFilter}
         />
       </div>
+
+      {refreshError && (
+        <div className="mx-4 mt-2 px-3 py-2 rounded-md bg-destructive/10 text-destructive text-sm">
+          Failed to refresh feed. Please try again.
+        </div>
+      )}
 
       <main className="flex-1 px-4 py-4">
         <MatchFeed days={filteredFeed} onPlay={handlePlay} />
