@@ -38,7 +38,7 @@ export function MatchFeed({ days, onPlay }: MatchFeedProps) {
         <section key={day.date} data-testid="feed-day">
           <h2
             data-testid="day-header"
-            className="sticky top-0 z-10 bg-[#0a0a0a]/95 backdrop-blur-sm py-3 font-[family-name:var(--font-oswald)] text-sm font-semibold text-zinc-400 uppercase tracking-widest border-b border-zinc-800/50 mb-4"
+            className="sticky top-0 z-10 bg-[#0a0a0a]/95 backdrop-blur-sm py-3 font-display text-sm font-semibold text-zinc-400 uppercase tracking-widest border-b border-zinc-800/50 mb-4"
           >
             {day.label}
           </h2>

@@ -111,13 +111,11 @@ export function MatchCard({ match, onPlay }: MatchCardProps) {
           </div>
         </div>
 
-        {/* Event name */}
-        <p className="text-center text-xs text-zinc-500 mb-3">{eventDisplay}</p>
-
-        {/* Channel source */}
-        {match.channelName && (
-          <p className="mt-2 text-center text-xs text-zinc-500">via {match.channelName}</p>
-        )}
+        {/* Event + channel */}
+        <p className="text-center text-xs text-zinc-500 mb-3">
+          {eventDisplay}
+          {match.channelName && <span className="text-zinc-600"> · via {match.channelName}</span>}
+        </p>
 
         {/* Watch link */}
         {match.youtubeVideoId && (

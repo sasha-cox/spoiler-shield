@@ -159,3 +159,8 @@
     @apply font-sans;
   }
 }
+
+.font-display {
+  font-family: var(--font-oswald), system-ui, sans-serif;
+  font-style: normal;
+}

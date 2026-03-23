@@ -88,7 +88,7 @@ export function FeedClient({ initialFeed, userName, userEmail, userImage }: { in
       <header className="flex items-center justify-between px-4 py-4 border-b border-[#D4A843]/20">
         <div className="flex items-center gap-2">
           <Shield className="size-6 text-[#D4A843]" />
-          <h1 className="font-[family-name:var(--font-oswald)] text-2xl font-bold text-[#D4A843]">
+          <h1 className="font-display text-2xl font-bold text-[#D4A843]">
             Spoiler Shield
           </h1>
         </div>

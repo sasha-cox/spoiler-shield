@@ -53,6 +53,31 @@ function extractTeams(title: string): { teamA: string; teamB: string } | null {
   return { teamA, teamB }
 }
 
+// Skip non-English and non-match content
+const SKIP_KEYWORDS = /인터뷰|interview|highlights|recap|preview|tierlist|tier list|reaction|紀錄|回顧|采访|집중|하이라이트|rankings|flashback|behind the scenes|press conference|#shorts|vertical|compilation|best of|top \d|montage|funny moments/i
+const NON_LATIN_HEAVY = /[\u3000-\u9FFF\uAC00-\uD7AF]{5,}/ // 5+ CJK characters = probably not English
+
+function isMatchContent(title: string): boolean {
+  if (SKIP_KEYWORDS.test(title)) return false
+  if (NON_LATIN_HEAVY.test(title)) return false
+  if (!/\bvs\.?\b/i.test(title)) return false
+  return true
+}
+
+// Channel preference for deduplication (lower = preferred)
+const CHANNEL_PRIORITY: Record<string, number> = {
+  'Caedrel': 0,
+  'LCK': 1,
+  'LEC': 1,
+  'LCS': 1,
+  'CBLOL': 1,
+  'LoL Esports': 2,
+}
+
+function dedupKey(teamA: string, teamB: string, date: string): string {
+  return [teamA, teamB].sort().join('|') + '|' + date
+}
+
 async function fetchFeed(): Promise<FeedDay[]> {
   const apiKey = process.env.YOUTUBE_API_KEY
   if (!apiKey) return []
@@ -65,8 +90,10 @@ async function fetchFeed(): Promise<FeedDay[]> {
     }
   }
 
+  // Build matches with filtering
   const matches: (FeedMatch & { _date: string })[] = []
   for (const upload of allUploads) {
+    if (!isMatchContent(upload.title)) continue
     const teams = extractTeams(upload.title)
     if (!teams) continue
     const eventName = extractEventName(upload.title, teams.teamA, teams.teamB)
@@ -87,8 +114,25 @@ async function fetchFeed(): Promise<FeedDay[]> {
     })
   }
 
-  const dayMap = new Map<string, FeedMatch[]>()
+  // Deduplicate: same teams on same date → keep preferred channel
+  const seen = new Map<string, FeedMatch & { _date: string }>()
   for (const match of matches) {
+    const key = dedupKey(match.teamA, match.teamB, match._date)
+    const existing = seen.get(key)
+    if (!existing) {
+      seen.set(key, match)
+    } else {
+      const existingPriority = CHANNEL_PRIORITY[existing.channelName ?? ''] ?? 99
+      const newPriority = CHANNEL_PRIORITY[match.channelName ?? ''] ?? 99
+      if (newPriority < existingPriority) {
+        seen.set(key, match)
+      }
+    }
+  }
+
+  // Group by date
+  const dayMap = new Map<string, FeedMatch[]>()
+  for (const match of seen.values()) {
     const dateStr = match._date
     if (!dayMap.has(dateStr)) dayMap.set(dateStr, [])
     const { _date, ...cleanMatch } = match

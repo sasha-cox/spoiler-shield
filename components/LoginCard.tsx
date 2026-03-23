@@ -22,7 +22,7 @@ export function LoginCard({ signInAction }: LoginCardProps) {
           {/* Shield icon */}
           <Shield className="size-16 text-[#D4A843] mb-6" strokeWidth={1.5} />
 
-          <h1 className="font-[family-name:var(--font-oswald)] text-3xl font-bold text-white uppercase tracking-widest mb-2">
+          <h1 className="font-display text-3xl font-bold text-white uppercase tracking-widest mb-2">
             Spoiler Shield
           </h1>
           <p className="text-zinc-500 mb-8">Spoiler-free LoL esports VODs</p>
