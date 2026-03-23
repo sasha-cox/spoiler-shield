@@ -3,12 +3,15 @@
 import type { FeedDay } from '@/lib/types'
 import { MatchCard } from '@/components/MatchCard'
 import { GameList } from '@/components/GameList'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 
 interface MatchFeedProps {
   days: FeedDay[]
   onPlay?: (youtubeVideoId: string) => void
+  followedTeams?: Set<string>
 }
+
+const EASE: [number, number, number, number] = [0.25, 0.46, 0.45, 0.94]
 
 const cardVariants = {
   hidden: { opacity: 0, y: 16 },
@@ -16,14 +19,21 @@ const cardVariants = {
     opacity: 1,
     y: 0,
     transition: {
-      delay: i * 0.06,
+      delay: Math.min(i * 0.06, 0.6),
       duration: 0.4,
-      ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number],
+      ease: EASE,
     },
   }),
 }
 
-export function MatchFeed({ days, onPlay }: MatchFeedProps) {
+const noMotionVariants = {
+  hidden: { opacity: 1, y: 0 },
+  visible: { opacity: 1, y: 0 },
+}
+
+export function MatchFeed({ days, onPlay, followedTeams }: MatchFeedProps) {
+  const prefersReducedMotion = useReducedMotion()
+
   if (days.length === 0) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -31,6 +41,8 @@ export function MatchFeed({ days, onPlay }: MatchFeedProps) {
       </div>
     )
   }
+
+  const variants = prefersReducedMotion ? noMotionVariants : cardVariants
 
   return (
     <div className="flex flex-col gap-8">
@@ -44,21 +56,27 @@ export function MatchFeed({ days, onPlay }: MatchFeedProps) {
           </h2>
 
           <div className="flex flex-col gap-4">
-            {day.matches.map((match, index) => (
-              <motion.div
-                key={match.id}
-                className="flex flex-col gap-2"
-                variants={cardVariants}
-                initial="hidden"
-                animate="visible"
-                custom={index}
-              >
-                <MatchCard match={match} onPlay={onPlay} />
-                {match.games && match.games.length > 0 && (
-                  <GameList games={match.games} onPlay={onPlay} />
-                )}
-              </motion.div>
-            ))}
+            {day.matches.map((match, index) => {
+              const isFollowed = followedTeams
+                ? followedTeams.has(match.teamA) || followedTeams.has(match.teamB)
+                : false
+
+              return (
+                <motion.div
+                  key={match.id}
+                  className="flex flex-col gap-2"
+                  variants={variants}
+                  initial="hidden"
+                  animate="visible"
+                  custom={index}
+                >
+                  <MatchCard match={match} onPlay={onPlay} isFollowed={isFollowed} />
+                  {match.games && match.games.length > 0 && (
+                    <GameList games={match.games} onPlay={onPlay} />
+                  )}
+                </motion.div>
+              )
+            })}
           </div>
         </section>
       ))}

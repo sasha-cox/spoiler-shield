@@ -18,9 +18,12 @@ const NON_LATIN_HEAVY = /[\u3000-\u9FFF\uAC00-\uD7AF]{5,}/ // 5+ CJK characters 
 // Channel preference for deduplication (lower = preferred)
 export const CHANNEL_PRIORITY: Record<string, number> = {
   'Caedrel': 0,
+  'IWDominate': 0,
+  'LS': 0,
   'LCK': 1,
   'LEC': 1,
   'LCS': 1,
+  'LPL': 1,
   'CBLOL': 1,
   'LoL Esports': 2,
 }

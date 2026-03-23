@@ -25,3 +25,21 @@ export interface FeedDay {
   label: string      // "Today", "Yesterday", "March 20"
   matches: FeedMatch[]
 }
+
+export type FeedFormat = 'bo1' | 'bo3' | 'bo5'
+
+export interface FeedFilters {
+  channel: string | null
+  regions: Set<string>
+  formats: Set<FeedFormat>
+  searchQuery: string
+  hideWatched: boolean
+}
+
+export type FilterAction =
+  | { type: 'SET_CHANNEL'; channel: string | null }
+  | { type: 'TOGGLE_REGION'; region: string }
+  | { type: 'TOGGLE_FORMAT'; format: FeedFormat }
+  | { type: 'SET_SEARCH'; query: string }
+  | { type: 'TOGGLE_HIDE_WATCHED' }
+  | { type: 'RESET' }

@@ -1,15 +1,54 @@
 'use client'
 
-import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useState, useCallback, useMemo, useEffect, useReducer } from 'react'
 import { signOut } from 'next-auth/react'
 import { FilterBar } from '@/components/FilterBar'
 import { MatchFeed } from '@/components/MatchFeed'
 import { markWatched, getWatchedVods } from '@/lib/watched-store'
+import { followTeam, unfollowTeam, getFollowedTeams } from '@/lib/follow-store'
+import { REGIONS } from '@/lib/regions'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Shield, RefreshCw, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { FeedDay } from '@/lib/types'
+import type { FeedDay, FeedFilters, FilterAction, FeedFormat } from '@/lib/types'
+
+// ── Filter state ────────────────────────────────────────────────────────
+
+const initialFilters: FeedFilters = {
+  channel: null,
+  regions: new Set(),
+  formats: new Set(),
+  searchQuery: '',
+  hideWatched: false,
+}
+
+function filterReducer(state: FeedFilters, action: FilterAction): FeedFilters {
+  switch (action.type) {
+    case 'SET_CHANNEL':
+      return { ...state, channel: action.channel }
+    case 'TOGGLE_REGION': {
+      const next = new Set(state.regions)
+      next.has(action.region) ? next.delete(action.region) : next.add(action.region)
+      return { ...state, regions: next }
+    }
+    case 'TOGGLE_FORMAT': {
+      const next = new Set(state.formats)
+      next.has(action.format) ? next.delete(action.format) : next.add(action.format)
+      return { ...state, formats: next }
+    }
+    case 'SET_SEARCH':
+      return { ...state, searchQuery: action.query }
+    case 'TOGGLE_HIDE_WATCHED':
+      return { ...state, hideWatched: !state.hideWatched }
+    case 'RESET':
+      return initialFilters
+    default:
+      return state
+  }
+}
+
+// ── Helper functions ────────────────────────────────────────────────────
 
 function applyWatchedState(days: FeedDay[], watched: Set<string>): FeedDay[] {
   return days.map((day) => ({
@@ -33,28 +72,88 @@ function extractChannels(days: FeedDay[]): string[] {
   return [...set].sort()
 }
 
-function filterByChannel(days: FeedDay[], channel: string | null): FeedDay[] {
-  if (!channel) return days
+function extractFormats(days: FeedDay[]): FeedFormat[] {
+  const set = new Set<FeedFormat>()
+  for (const day of days) {
+    for (const match of day.matches) {
+      set.add(match.format)
+    }
+  }
+  const order: FeedFormat[] = ['bo1', 'bo3', 'bo5']
+  return order.filter(f => set.has(f))
+}
+
+function extractTeamNames(days: FeedDay[]): string[] {
+  const set = new Set<string>()
+  for (const day of days) {
+    for (const match of day.matches) {
+      set.add(match.teamA)
+      set.add(match.teamB)
+    }
+  }
+  return [...set].sort()
+}
+
+function filterDays(days: FeedDay[], filters: FeedFilters): FeedDay[] {
   return days
     .map((day) => ({
       ...day,
-      matches: day.matches.filter((match) => match.channelName === channel),
+      matches: day.matches.filter((match) => {
+        // Channel filter
+        if (filters.channel && match.channelName !== filters.channel) return false
+        // Region filter (multi-select: show if match region is in selected set)
+        if (filters.regions.size > 0 && match.region && !filters.regions.has(regionIdFromShortCode(match.region))) return false
+        // Format filter
+        if (filters.formats.size > 0 && !filters.formats.has(match.format)) return false
+        // Search filter
+        if (filters.searchQuery.trim()) {
+          const q = filters.searchQuery.toLowerCase()
+          if (!match.teamA.toLowerCase().includes(q) && !match.teamB.toLowerCase().includes(q)) return false
+        }
+        // Hide watched
+        if (filters.hideWatched && match.watched) return false
+        return true
+      }),
     }))
     .filter((day) => day.matches.length > 0)
 }
 
+// Map region short codes (LCK, LEC, etc.) back to region IDs (KR, EU, etc.)
+function regionIdFromShortCode(shortCode: string): string {
+  for (const [id, region] of Object.entries(REGIONS)) {
+    if (region.shortCode === shortCode) return id
+  }
+  return shortCode
+}
+
+// ── Component ───────────────────────────────────────────────────────────
+
 export function FeedClient({ initialFeed, userName, userEmail, userImage }: { initialFeed: FeedDay[]; userName?: string; userEmail?: string; userImage?: string }) {
   const [rawFeed, setRawFeed] = useState<FeedDay[]>(initialFeed)
   const [watchedSet, setWatchedSet] = useState<Set<string>>(new Set())
+  const [followedSet, setFollowedSet] = useState<Set<string>>(new Set())
+  const [filters, dispatch] = useReducer(filterReducer, initialFilters)
+  const [refreshError, setRefreshError] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
-  // Hydrate watched state after mount to avoid SSR mismatch
+  // Hydrate client state after mount to avoid SSR mismatch
   useEffect(() => {
     setWatchedSet(getWatchedVods())
+    setFollowedSet(getFollowedTeams())
   }, [])
-  const [activeFilter, setActiveFilter] = useState<string | null>(null)
-  const [refreshError, setRefreshError] = useState(false)
 
   const channels = useMemo(() => extractChannels(rawFeed), [rawFeed])
+  const availableFormats = useMemo(() => extractFormats(rawFeed), [rawFeed])
+  const teamNames = useMemo(() => extractTeamNames(rawFeed), [rawFeed])
+  const availableRegions = useMemo(() => {
+    const regionIds = new Set<string>()
+    for (const day of rawFeed) {
+      for (const match of day.matches) {
+        if (match.region) regionIds.add(regionIdFromShortCode(match.region))
+      }
+    }
+    return Object.values(REGIONS).filter(r => regionIds.has(r.id))
+  }, [rawFeed])
 
   const feedWithWatched = useMemo(
     () => applyWatchedState(rawFeed, watchedSet),
@@ -62,8 +161,8 @@ export function FeedClient({ initialFeed, userName, userEmail, userImage }: { in
   )
 
   const filteredFeed = useMemo(
-    () => filterByChannel(feedWithWatched, activeFilter),
-    [feedWithWatched, activeFilter],
+    () => filterDays(feedWithWatched, filters),
+    [feedWithWatched, filters],
   )
 
   const handlePlay = useCallback(
@@ -73,8 +172,6 @@ export function FeedClient({ initialFeed, userName, userEmail, userImage }: { in
     },
     [],
   )
-
-  const [isRefreshing, setIsRefreshing] = useState(false)
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true)
@@ -93,6 +190,16 @@ export function FeedClient({ initialFeed, userName, userEmail, userImage }: { in
       setIsRefreshing(false)
     }
     setWatchedSet(getWatchedVods())
+  }, [])
+
+  const handleFollowTeam = useCallback((team: string) => {
+    followTeam(team)
+    setFollowedSet(getFollowedTeams())
+  }, [])
+
+  const handleUnfollowTeam = useCallback((team: string) => {
+    unfollowTeam(team)
+    setFollowedSet(getFollowedTeams())
   }, [])
 
   return (
@@ -145,8 +252,14 @@ export function FeedClient({ initialFeed, userName, userEmail, userImage }: { in
       <div className="px-4 pt-3">
         <FilterBar
           channels={channels}
-          activeFilter={activeFilter}
-          onFilterChange={setActiveFilter}
+          regions={availableRegions}
+          formats={availableFormats}
+          filters={filters}
+          onFilterChange={dispatch}
+          followedTeams={followedSet}
+          teamNames={teamNames}
+          onFollowTeam={handleFollowTeam}
+          onUnfollowTeam={handleUnfollowTeam}
         />
       </div>
 
@@ -156,8 +269,8 @@ export function FeedClient({ initialFeed, userName, userEmail, userImage }: { in
         </div>
       )}
 
-      <main className="flex-1 px-4 py-4">
-        <MatchFeed days={filteredFeed} onPlay={handlePlay} />
+      <main className="flex-1 px-4 py-4" aria-live="polite">
+        <MatchFeed days={filteredFeed} onPlay={handlePlay} followedTeams={followedSet} />
       </main>
 
     </div>

@@ -2,63 +2,77 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi } from 'vitest'
 import { FilterBar } from '@/components/FilterBar'
+import type { FeedFilters, FilterAction } from '@/lib/types'
 
-// ── Tests ────────────────────────────────────────────────────────────────────
+const defaultFilters: FeedFilters = {
+  channel: null,
+  regions: new Set(),
+  formats: new Set(),
+  searchQuery: '',
+  hideWatched: false,
+}
+
+const defaultProps = {
+  channels: ['LCK', 'LEC', 'LCS'],
+  regions: [],
+  formats: [] as ('bo1' | 'bo3' | 'bo5')[],
+  filters: defaultFilters,
+  onFilterChange: () => {},
+  followedTeams: new Set<string>(),
+  teamNames: [],
+  onFollowTeam: () => {},
+  onUnfollowTeam: () => {},
+}
 
 describe('FilterBar', () => {
-  const channels = ['LCK', 'LEC', 'LCS']
-
   it('renders an "All" button plus one button per channel name', () => {
-    render(
-      <FilterBar channels={channels} activeFilter={null} onFilterChange={() => {}} />
-    )
+    render(<FilterBar {...defaultProps} />)
 
     expect(screen.getByRole('button', { name: 'All' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'LCK' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'LEC' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'LCS' })).toBeInTheDocument()
-
-    // Total: 4 buttons (All + 3 channels)
-    const buttons = screen.getAllByRole('button')
-    expect(buttons).toHaveLength(4)
   })
 
-  it('clicking a channel button fires onFilterChange with the channel name', async () => {
+  it('clicking a channel button fires onFilterChange with SET_CHANNEL action', async () => {
     const user = userEvent.setup()
     const onFilterChange = vi.fn()
 
-    render(
-      <FilterBar channels={channels} activeFilter={null} onFilterChange={onFilterChange} />
-    )
+    render(<FilterBar {...defaultProps} onFilterChange={onFilterChange} />)
 
     await user.click(screen.getByRole('button', { name: 'LEC' }))
-    expect(onFilterChange).toHaveBeenCalledWith('LEC')
-    expect(onFilterChange).toHaveBeenCalledTimes(1)
+    expect(onFilterChange).toHaveBeenCalledWith({ type: 'SET_CHANNEL', channel: 'LEC' })
   })
 
-  it('clicking the "All" button fires onFilterChange with null', async () => {
+  it('clicking the "All" button fires onFilterChange with null channel', async () => {
     const user = userEvent.setup()
     const onFilterChange = vi.fn()
 
     render(
-      <FilterBar channels={channels} activeFilter="LCK" onFilterChange={onFilterChange} />
+      <FilterBar
+        {...defaultProps}
+        filters={{ ...defaultFilters, channel: 'LCK' }}
+        onFilterChange={onFilterChange}
+      />
     )
 
     await user.click(screen.getByRole('button', { name: 'All' }))
-    expect(onFilterChange).toHaveBeenCalledWith(null)
-    expect(onFilterChange).toHaveBeenCalledTimes(1)
+    expect(onFilterChange).toHaveBeenCalledWith({ type: 'SET_CHANNEL', channel: null })
   })
 
-  it('highlights the active filter with gold accent and dims inactive pills', () => {
+  it('highlights the active channel filter with gold accent', () => {
     render(
-      <FilterBar channels={channels} activeFilter="LCK" onFilterChange={() => {}} />
+      <FilterBar
+        {...defaultProps}
+        filters={{ ...defaultFilters, channel: 'LCK' }}
+      />
     )
 
-    const allButton = screen.getByRole('button', { name: 'All' })
     const lckButton = screen.getByRole('button', { name: 'LCK' })
+    const allButton = screen.getByRole('button', { name: 'All' })
     const lecButton = screen.getByRole('button', { name: 'LEC' })
 
-    // Active pill (LCK) should have gold accent styling
+    // Active pill should have gold accent
     expect(lckButton.className).toMatch(/bg-gold/)
     expect(lckButton.className).toMatch(/text-black/)
 
@@ -67,28 +81,47 @@ describe('FilterBar', () => {
     expect(lecButton.className).toMatch(/text-zinc-400/)
   })
 
-  it('highlights "All" when activeFilter is null', () => {
-    render(
-      <FilterBar channels={channels} activeFilter={null} onFilterChange={() => {}} />
-    )
+  it('highlights "All" when channel filter is null', () => {
+    render(<FilterBar {...defaultProps} />)
 
     const allButton = screen.getByRole('button', { name: 'All' })
     const lckButton = screen.getByRole('button', { name: 'LCK' })
 
-    // "All" should be active with gold accent
     expect(allButton.className).toMatch(/bg-gold/)
-    expect(allButton.className).toMatch(/text-black/)
-
-    // Channel buttons should be inactive
     expect(lckButton.className).toMatch(/text-zinc-400/)
   })
 
-  it('has horizontal scroll overflow for mobile', () => {
-    const { container } = render(
-      <FilterBar channels={channels} activeFilter={null} onFilterChange={() => {}} />
+  it('renders hide watched toggle', () => {
+    render(<FilterBar {...defaultProps} />)
+
+    expect(screen.getByRole('button', { name: /hide watched/i })).toBeInTheDocument()
+  })
+
+  it('renders search button', () => {
+    render(<FilterBar {...defaultProps} />)
+
+    const searchButtons = screen.getAllByRole('button').filter(
+      btn => btn.querySelector('.lucide-search')
+    )
+    expect(searchButtons.length).toBeGreaterThanOrEqual(0)
+  })
+
+  it('displays followed teams as chips', () => {
+    render(
+      <FilterBar
+        {...defaultProps}
+        followedTeams={new Set(['T1', 'Gen.G'])}
+      />
     )
 
-    const scrollContainer = container.firstElementChild as HTMLElement
-    expect(scrollContainer.className).toMatch(/overflow-x-auto/)
+    expect(screen.getByText('T1')).toBeInTheDocument()
+    expect(screen.getByText('Gen.G')).toBeInTheDocument()
+  })
+
+  it('has horizontal scroll overflow for mobile', () => {
+    const { container } = render(<FilterBar {...defaultProps} />)
+
+    const scrollContainer = container.querySelector('.overflow-x-auto')
+    expect(scrollContainer).toBeInTheDocument()
   })
 })

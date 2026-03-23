@@ -4,7 +4,7 @@ import type { FeedMatch } from '@/lib/types'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Play } from 'lucide-react'
+import { Play, Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 function formatLabel(format: FeedMatch['format']): string {
@@ -44,9 +44,10 @@ function teamAbbr(name: string): string {
 interface MatchCardProps {
   match: FeedMatch
   onPlay?: (youtubeVideoId: string) => void
+  isFollowed?: boolean
 }
 
-export function MatchCard({ match, onPlay }: MatchCardProps) {
+export function MatchCard({ match, onPlay, isFollowed }: MatchCardProps) {
   const eventDisplay = match.eventName === match.eventName.toUpperCase()
     ? toTitleCase(match.eventName)
     : match.eventName
@@ -55,13 +56,17 @@ export function MatchCard({ match, onPlay }: MatchCardProps) {
     <Card
       data-testid="match-card"
       className={cn(
-        'relative border-l-2 border-l-gold bg-surface ring-surface-border',
+        'relative border-l-2 bg-surface ring-surface-border',
+        isFollowed ? 'border-l-gold ring-gold/15' : 'border-l-gold',
         match.watched && 'opacity-40'
       )}
     >
       <CardContent className="relative pt-1 pb-1">
-        {/* Format badge + watched badge */}
+        {/* Badges row */}
         <div className="absolute top-0 right-0 flex items-center gap-1.5">
+          {isFollowed && (
+            <Star className="size-3.5 text-gold fill-gold" />
+          )}
           {match.watched && (
             <Badge
               variant="secondary"
