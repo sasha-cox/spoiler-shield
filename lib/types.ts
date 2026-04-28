@@ -17,6 +17,7 @@ export interface FeedMatch {
   region?: string          // Region short code (e.g., "LCK", "LEC")
   regionFlag?: string      // Flag emoji
   regionColor?: string     // Color for the badge
+  publishedAt?: string     // ISO date string of when the VOD was uploaded
   games?: FeedGameEntry[]  // Per-game VODs (for channels that upload separately)
 }
 

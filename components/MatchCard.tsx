@@ -1,10 +1,11 @@
 'use client'
 
+import { useState } from 'react'
 import type { FeedMatch } from '@/lib/types'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Play, Star } from 'lucide-react'
+import { Play, Star, Clock, Youtube } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 function formatLabel(format: FeedMatch['format']): string {
@@ -32,13 +33,24 @@ function toTitleCase(str: string): string {
 
 /** Extract a short abbreviation from a team name (e.g. "G2 Esports" → "G2") */
 function teamAbbr(name: string): string {
-  // If the name is already short (3 chars or less), use it as-is
   if (name.length <= 3) return name.toUpperCase()
-  // If it has multiple words, take the first word (covers "G2 Esports", "T1", "Gen.G" etc.)
   const firstWord = name.split(/\s+/)[0]
   if (firstWord.length <= 4) return firstWord.toUpperCase()
-  // Fallback: take first 3 characters
   return name.slice(0, 3).toUpperCase()
+}
+
+/** Format a relative time string from an ISO date */
+function timeAgo(isoDate: string): string {
+  const now = Date.now()
+  const then = new Date(isoDate).getTime()
+  const diffMs = now - then
+  const minutes = Math.floor(diffMs / 60000)
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  if (days === 1) return '1 day ago'
+  return `${days} days ago`
 }
 
 interface MatchCardProps {
@@ -48,6 +60,8 @@ interface MatchCardProps {
 }
 
 export function MatchCard({ match, onPlay, isFollowed }: MatchCardProps) {
+  const [showTime, setShowTime] = useState(false)
+
   const eventDisplay = match.eventName === match.eventName.toUpperCase()
     ? toTitleCase(match.eventName)
     : match.eventName
@@ -116,11 +130,35 @@ export function MatchCard({ match, onPlay, isFollowed }: MatchCardProps) {
           </div>
         </div>
 
-        {/* Event + channel */}
-        <p className="text-center text-xs text-zinc-500 mb-3">
+        {/* Event name */}
+        <p className="text-center text-xs text-zinc-500 mb-2">
           {eventDisplay}
-          {match.channelName && <span className="text-zinc-600"> · via {match.channelName}</span>}
         </p>
+
+        {/* Channel + time row */}
+        <div className="flex items-center justify-center gap-3 mb-3">
+          {match.channelName && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-zinc-800 px-2.5 py-0.5 text-[11px] font-medium text-zinc-300">
+              <Youtube className="size-3 text-red-500" />
+              {match.channelName}
+            </span>
+          )}
+          {match.publishedAt && (
+            <button
+              onClick={() => setShowTime(!showTime)}
+              className={cn(
+                'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-colors',
+                showTime
+                  ? 'bg-zinc-800 text-zinc-400'
+                  : 'bg-zinc-800/50 text-zinc-600 hover:text-zinc-400'
+              )}
+              aria-label={showTime ? 'Hide upload time' : 'Show upload time (possible spoiler)'}
+            >
+              <Clock className="size-3" />
+              {showTime ? timeAgo(match.publishedAt) : 'Posted ???'}
+            </button>
+          )}
+        </div>
 
         {/* Watch link */}
         {match.youtubeVideoId && (

@@ -106,6 +106,7 @@ export function buildFeedFromUploads(uploads: RawUpload[]): FeedDay[] {
       youtubeVideoId: upload.videoId,
       channelName: upload.channelName,
       watched: false,
+      publishedAt: upload.publishedAt.toISOString(),
       region: region.shortCode,
       regionFlag: region.flag,
       regionColor: region.color,

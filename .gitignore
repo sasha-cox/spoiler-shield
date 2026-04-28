@@ -40,3 +40,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local tooling / agents
+.claude/
+.remember/
+.playwright-mcp/
+
+# local screenshots (allow committed assets under public/)
+*.png
+!public/**/*.png
