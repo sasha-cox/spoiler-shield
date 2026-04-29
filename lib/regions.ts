@@ -1,3 +1,5 @@
+import { TEAM_REGIONS } from './teams.generated'
+
 export interface Region {
   id: string
   name: string
@@ -13,17 +15,6 @@ export const REGIONS: Record<string, Region> = {
   CN: { id: 'CN', name: 'China', shortCode: 'LPL', flag: '🇨🇳', color: '#F97316' },
   BR: { id: 'BR', name: 'Brazil', shortCode: 'CBLOL', flag: '🇧🇷', color: '#FACC15' },
   INT: { id: 'INT', name: 'International', shortCode: 'INT', flag: '🌍', color: '#D4A843' },
-}
-
-// Map canonical team names to their region
-const TEAM_REGIONS: Record<string, string> = {
-  'T1': 'KR', 'Gen.G': 'KR', 'DK': 'KR', 'Hanwha Life Esports': 'KR', 'KT Rolster': 'KR', 'FearX': 'KR',
-  'G2 Esports': 'EU', 'Fnatic': 'EU', 'Karmine Corp': 'EU', 'Team Vitality': 'EU', 'MOUZ KOI': 'EU',
-  'Cloud9': 'NA', 'FlyQuest': 'NA', 'Team Liquid': 'NA', '100 Thieves': 'NA', 'Dignitas': 'NA', 'NRG': 'NA',
-  'Lyon Gaming': 'NA',
-  'BLG': 'CN', 'JDG': 'CN', 'Weibo Gaming': 'CN', 'Top Esports': 'CN', 'EDward Gaming': 'CN',
-  'Royal Never Give Up': 'CN',
-  'LOUD': 'BR',
 }
 
 // Event name keywords that indicate a region

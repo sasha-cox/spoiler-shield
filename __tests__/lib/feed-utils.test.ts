@@ -58,7 +58,7 @@ describe('extractTeams', () => {
 
   it('extracts teams from Caedrel-style titles', () => {
     const result = extractTeams('G2 VS BLG - FIRST STAND GRAND FINALS 2026')
-    expect(result).toEqual({ teamA: 'G2 Esports', teamB: 'BLG' })
+    expect(result).toEqual({ teamA: 'G2 Esports', teamB: 'Bilibili Gaming' })
   })
 
   it('returns null for non-match titles', () => {
