@@ -26,7 +26,8 @@ function toTitleCase(str: string): string {
     .join(' ')
 }
 
-function teamAbbr(name: string): string {
+function teamAbbr(name: string, code?: string): string {
+  if (code) return code.toUpperCase()
   if (name.length <= 3) return name.toUpperCase()
   const firstWord = name.split(/\s+/)[0]
   if (firstWord.length <= 4) return firstWord.toUpperCase()
@@ -118,7 +119,7 @@ export function MatchCard({ match, isFollowed }: MatchCardProps) {
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           <div className="flex flex-col items-end text-right min-w-0">
             <span className="font-display text-3xl font-bold leading-none text-white tracking-tight">
-              {teamAbbr(match.teamA)}
+              {teamAbbr(match.teamA, match.teamACode)}
             </span>
             <span className="mt-1 text-xs text-text-secondary truncate max-w-full">
               {match.teamA}
@@ -142,7 +143,7 @@ export function MatchCard({ match, isFollowed }: MatchCardProps) {
 
           <div className="flex flex-col items-start text-left min-w-0">
             <span className="font-display text-3xl font-bold leading-none text-white tracking-tight">
-              {teamAbbr(match.teamB)}
+              {teamAbbr(match.teamB, match.teamBCode)}
             </span>
             <span className="mt-1 text-xs text-text-secondary truncate max-w-full">
               {match.teamB}

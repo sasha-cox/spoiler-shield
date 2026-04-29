@@ -83,6 +83,8 @@ export function buildFeedFromSchedule(
       id: scheduled.id,
       teamA: teamAName,
       teamB: teamBName,
+      teamACode: scheduled.teamA.code,
+      teamBCode: scheduled.teamB.code,
       eventName: formatEventName(scheduled),
       format: scheduled.format,
       youtubeVideoId: vod.upload.videoId,

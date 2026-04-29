@@ -9,6 +9,10 @@ export interface FeedMatch {
   id: string
   teamA: string
   teamB: string
+  /** Canonical short code (e.g. "DRX", "T1"). From the lolesports schedule
+   *  when available; never derived from the team name. */
+  teamACode?: string
+  teamBCode?: string
   eventName: string
   format: 'bo1' | 'bo3' | 'bo5'
   youtubeVideoId?: string  // Single VOD for the whole series (e.g., Caedrel costreams)
