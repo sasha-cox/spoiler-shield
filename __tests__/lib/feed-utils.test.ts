@@ -1,14 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import {
-  getDateLabel,
-  guessFormat,
-  extractTeams,
-  extractEventName,
-  isMatchContent,
-  dedupKey,
-  buildFeedFromUploads,
-} from '@/lib/feed-utils'
-import type { RawUpload } from '@/lib/feed-utils'
+import { getDateLabel, buildFeedFromSchedule } from '@/lib/feed-utils'
+import type { ScheduledMatch } from '@/lib/lolesports'
+import type { VodCandidate } from '@/lib/match-vod-resolver'
 
 describe('getDateLabel', () => {
   it('returns "Today" for today\'s date', () => {
@@ -23,139 +16,105 @@ describe('getDateLabel', () => {
   })
 
   it('returns formatted date for older dates', () => {
-    const result = getDateLabel('2025-01-15')
-    expect(result).toBe('January 15')
+    expect(getDateLabel('2025-01-15')).toBe('January 15')
   })
 })
 
-describe('guessFormat', () => {
-  it('detects BO5 from title', () => {
-    expect(guessFormat('T1 vs Gen.G - BO5 Grand Finals')).toBe('bo5')
-  })
+function makeScheduled(overrides: Partial<ScheduledMatch> = {}): ScheduledMatch {
+  return {
+    id: overrides.id ?? 'm1',
+    leagueSlug: 'lck',
+    leagueName: 'LCK',
+    blockName: 'Week 5',
+    startTime: '2026-04-22T08:00:00Z',
+    teamA: { name: 'Hanwha Life Esports', code: 'HLE' },
+    teamB: { name: 'Nongshim RedForce', code: 'NS' },
+    format: 'bo3',
+    hasVod: true,
+    ...overrides,
+  }
+}
 
-  it('detects GRAND FINAL as bo5', () => {
-    expect(guessFormat('GRAND FINAL 2026 - G2 VS BLG')).toBe('bo5')
-  })
+function makeVod(videoId: string, channelName: string): VodCandidate {
+  return {
+    upload: {
+      videoId,
+      title: 'sample',
+      publishedAt: new Date('2026-04-22T15:00:00Z'),
+      channelName,
+    },
+    channelPriority: 0,
+  }
+}
 
-  it('detects BO3 from title', () => {
-    expect(guessFormat('T1 vs DK - BO3 Playoffs')).toBe('bo3')
-  })
-
-  it('detects SEMI FINAL as bo3', () => {
-    expect(guessFormat('SEMI FINAL - FNC vs G2')).toBe('bo3')
-  })
-
-  it('defaults to bo1', () => {
-    expect(guessFormat('T1 vs Gen.G - LCK Spring 2026')).toBe('bo1')
-  })
-})
-
-describe('extractTeams', () => {
-  it('extracts teams from "Team A vs Team B" pattern', () => {
-    const result = extractTeams('T1 vs Gen.G - LCK Spring')
-    expect(result).toEqual({ teamA: 'T1', teamB: 'Gen.G' })
-  })
-
-  it('extracts teams from Caedrel-style titles', () => {
-    const result = extractTeams('G2 VS BLG - FIRST STAND GRAND FINALS 2026')
-    expect(result).toEqual({ teamA: 'G2 Esports', teamB: 'Bilibili Gaming' })
-  })
-
-  it('returns null for non-match titles', () => {
-    expect(extractTeams('LCK Spring 2026 Highlights')).toBeNull()
-  })
-
-  it('returns null for titles without vs', () => {
-    expect(extractTeams('Interview with Faker after winning LCK')).toBeNull()
-  })
-})
-
-describe('extractEventName', () => {
-  it('extracts event from dash-separated title', () => {
-    const result = extractEventName('FIRST STAND GRAND FINALS 2026 - G2 VS BLG', 'G2 Esports', 'BLG')
-    expect(result).toBe('FIRST STAND GRAND FINALS 2026')
-  })
-
-  it('picks segment with tournament keyword', () => {
-    const result = extractEventName('LOSER GOES HOME - LOUD VS JDG - FIRST STAND 2026', 'LOUD', 'JDG')
-    expect(result).toBe('FIRST STAND 2026')
-  })
-
-  it('falls back to full title if no event found', () => {
-    const result = extractEventName('T1 vs G2', 'T1', 'G2 Esports')
-    expect(result).toBe('T1 vs G2')
-  })
-})
-
-describe('isMatchContent', () => {
-  it('returns true for match titles', () => {
-    expect(isMatchContent('T1 vs Gen.G - LCK Spring 2026')).toBe(true)
-  })
-
-  it('returns false for interview titles', () => {
-    expect(isMatchContent('Interview with Faker')).toBe(false)
-  })
-
-  it('returns false for highlights', () => {
-    expect(isMatchContent('T1 vs Gen.G Highlights')).toBe(false)
-  })
-
-  it('returns false for titles without vs', () => {
-    expect(isMatchContent('LCK Spring 2026 Tier List')).toBe(false)
-  })
-
-  it('returns false for CJK-heavy titles', () => {
-    expect(isMatchContent('T1 vs Gen.G 한국어 방송 인터뷰 하이라이트')).toBe(false)
-  })
-
-  it('returns false for recap content', () => {
-    expect(isMatchContent('T1 vs Gen.G recap and analysis')).toBe(false)
-  })
-})
-
-describe('dedupKey', () => {
-  it('creates a consistent key regardless of team order', () => {
-    const key1 = dedupKey('T1', 'Gen.G', '2026-03-20')
-    const key2 = dedupKey('Gen.G', 'T1', '2026-03-20')
-    expect(key1).toBe(key2)
-  })
-
-  it('different dates produce different keys', () => {
-    const key1 = dedupKey('T1', 'Gen.G', '2026-03-20')
-    const key2 = dedupKey('T1', 'Gen.G', '2026-03-21')
-    expect(key1).not.toBe(key2)
-  })
-})
-
-describe('buildFeedFromUploads', () => {
-  it('filters out non-match content and groups by date', () => {
-    const uploads: RawUpload[] = [
-      { videoId: 'v1', title: 'T1 vs Gen.G - LCK Spring 2026', publishedAt: new Date('2026-03-20T12:00:00Z'), channelName: 'LCK' },
-      { videoId: 'v2', title: 'LCK Highlights Week 10', publishedAt: new Date('2026-03-20T13:00:00Z'), channelName: 'LCK' },
-      { videoId: 'v3', title: 'G2 vs FNC - LEC Spring 2026', publishedAt: new Date('2026-03-19T14:00:00Z'), channelName: 'LEC' },
+describe('buildFeedFromSchedule', () => {
+  it('builds a day-grouped feed from scheduled matches with resolved VODs', () => {
+    const schedule: ScheduledMatch[] = [
+      makeScheduled({ id: 'a', startTime: '2026-04-22T08:00:00Z' }),
+      makeScheduled({
+        id: 'b',
+        startTime: '2026-04-21T08:00:00Z',
+        teamA: { name: 'T1', code: 'T1' },
+        teamB: { name: 'Gen.G', code: 'GEN' },
+      }),
     ]
-
-    const feed = buildFeedFromUploads(uploads)
-    expect(feed).toHaveLength(2) // Two different dates
-    expect(feed[0].date).toBe('2026-03-20') // Most recent first
-    expect(feed[0].matches).toHaveLength(1) // Highlights filtered out
-    expect(feed[0].matches[0].teamA).toBe('T1')
-    expect(feed[1].matches[0].teamA).toBe('G2 Esports')
+    const vods = new Map([
+      ['a', makeVod('vidA', 'Caedrel')],
+      ['b', makeVod('vidB', 'LCK')],
+    ])
+    const feed = buildFeedFromSchedule(schedule, vods)
+    expect(feed).toHaveLength(2)
+    expect(feed[0].date).toBe('2026-04-22')
+    expect(feed[0].matches[0].teamA).toBe('Hanwha Life Esports')
+    expect(feed[0].matches[0].teamB).toBe('Nongshim RedForce')
+    expect(feed[0].matches[0].youtubeVideoId).toBe('vidA')
+    expect(feed[1].date).toBe('2026-04-21')
+    expect(feed[1].matches[0].teamA).toBe('T1')
   })
 
-  it('deduplicates same match from different channels, preferring higher priority', () => {
-    const uploads: RawUpload[] = [
-      { videoId: 'v1', title: 'T1 vs Gen.G - LCK Spring', publishedAt: new Date('2026-03-20T12:00:00Z'), channelName: 'LoL Esports' },
-      { videoId: 'v2', title: 'T1 vs Gen.G - LCK Spring', publishedAt: new Date('2026-03-20T13:00:00Z'), channelName: 'LCK' },
+  it('drops scheduled matches with no resolved VOD (cant watch what we cant find)', () => {
+    const schedule = [makeScheduled({ id: 'a' })]
+    const feed = buildFeedFromSchedule(schedule, new Map())
+    expect(feed).toEqual([])
+  })
+
+  it('uses canonical schedule team names regardless of upload title', () => {
+    const schedule = [makeScheduled({ id: 'a' })]
+    const vods = new Map([
+      [
+        'a',
+        {
+          upload: {
+            videoId: 'v',
+            title: 'ZEUS vs KINGEN | players nicknames in title',
+            publishedAt: new Date('2026-04-22T15:00:00Z'),
+            channelName: 'Caedrel',
+          },
+          channelPriority: 0,
+        },
+      ],
+    ])
+    const feed = buildFeedFromSchedule(schedule, vods)
+    expect(feed[0].matches[0].teamA).toBe('Hanwha Life Esports')
+    expect(feed[0].matches[0].teamB).toBe('Nongshim RedForce')
+  })
+
+  it('format and event name come from schedule, not upload title', () => {
+    const schedule = [
+      makeScheduled({
+        id: 'a',
+        format: 'bo5',
+        leagueName: 'LCK',
+        blockName: 'Spring Playoffs',
+      }),
     ]
-
-    const feed = buildFeedFromUploads(uploads)
-    expect(feed).toHaveLength(1)
-    expect(feed[0].matches).toHaveLength(1)
-    expect(feed[0].matches[0].channelName).toBe('LCK') // LCK preferred over LoL Esports
+    const vods = new Map([['a', makeVod('v', 'Caedrel')]])
+    const feed = buildFeedFromSchedule(schedule, vods)
+    expect(feed[0].matches[0].format).toBe('bo5')
+    expect(feed[0].matches[0].eventName).toBe('LCK Spring Playoffs')
   })
 
-  it('returns empty array for empty input', () => {
-    expect(buildFeedFromUploads([])).toEqual([])
+  it('returns empty array when schedule is empty', () => {
+    expect(buildFeedFromSchedule([], new Map())).toEqual([])
   })
 })
