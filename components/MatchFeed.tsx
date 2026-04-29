@@ -9,6 +9,7 @@ interface MatchFeedProps {
   days: FeedDay[]
   onPlay?: (youtubeVideoId: string) => void
   followedTeams?: Set<string>
+  emptyMessage?: string
 }
 
 const EASE: [number, number, number, number] = [0.25, 0.46, 0.45, 0.94]
@@ -31,13 +32,15 @@ const noMotionVariants = {
   visible: { opacity: 1, y: 0 },
 }
 
-export function MatchFeed({ days, onPlay, followedTeams }: MatchFeedProps) {
+export function MatchFeed({ days, onPlay, followedTeams, emptyMessage }: MatchFeedProps) {
   const prefersReducedMotion = useReducedMotion()
 
   if (days.length === 0) {
     return (
       <div className="flex items-center justify-center py-20">
-        <p className="text-text-secondary text-xl">No VODs ready yet — <span className="text-gold">check back soon</span></p>
+        <p className="text-text-secondary text-xl">
+          {emptyMessage ?? <>No VODs ready yet — <span className="text-gold">check back soon</span></>}
+        </p>
       </div>
     )
   }

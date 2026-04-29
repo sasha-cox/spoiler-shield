@@ -7,6 +7,7 @@ import { MatchFeed } from '@/components/MatchFeed'
 import { markWatched, getWatchedVods } from '@/lib/watched-store'
 import { followTeam, unfollowTeam, getFollowedTeams } from '@/lib/follow-store'
 import { REGIONS } from '@/lib/regions'
+import { MONITORED_CHANNELS } from '@/lib/config'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Shield, RefreshCw, LogOut } from 'lucide-react'
@@ -62,15 +63,13 @@ function applyWatchedState(days: FeedDay[], watched: Set<string>): FeedDay[] {
   }))
 }
 
-function extractChannels(days: FeedDay[]): string[] {
-  const set = new Set<string>()
-  for (const day of days) {
-    for (const match of day.matches) {
-      if (match.channelName) set.add(match.channelName)
-    }
-  }
-  return [...set].sort()
-}
+// All channels supported by the app, in config order — keeps the filter bar
+// stable so users can see which leagues exist even when a given league has no
+// recent matches in the feed.
+const ALL_CHANNELS: string[] = MONITORED_CHANNELS.map((c) => c.name)
+
+// All regions supported by the app, in config order.
+const ALL_REGIONS = Object.values(REGIONS)
 
 function extractFormats(days: FeedDay[]): FeedFormat[] {
   const set = new Set<FeedFormat>()
@@ -142,18 +141,8 @@ export function FeedClient({ initialFeed, userName, userEmail, userImage }: { in
     setFollowedSet(getFollowedTeams())
   }, [])
 
-  const channels = useMemo(() => extractChannels(rawFeed), [rawFeed])
   const availableFormats = useMemo(() => extractFormats(rawFeed), [rawFeed])
   const teamNames = useMemo(() => extractTeamNames(rawFeed), [rawFeed])
-  const availableRegions = useMemo(() => {
-    const regionIds = new Set<string>()
-    for (const day of rawFeed) {
-      for (const match of day.matches) {
-        if (match.region) regionIds.add(regionIdFromShortCode(match.region))
-      }
-    }
-    return Object.values(REGIONS).filter(r => regionIds.has(r.id))
-  }, [rawFeed])
 
   const feedWithWatched = useMemo(
     () => applyWatchedState(rawFeed, watchedSet),
@@ -164,6 +153,15 @@ export function FeedClient({ initialFeed, userName, userEmail, userImage }: { in
     () => filterDays(feedWithWatched, filters),
     [feedWithWatched, filters],
   )
+
+  const hasFeedContent = rawFeed.some((d) => d.matches.length > 0)
+  const emptyMessage = !hasFeedContent
+    ? undefined // Use default "No VODs ready yet" copy
+    : filters.channel
+      ? `No ${filters.channel} matches in the current feed`
+      : filters.regions.size > 0 || filters.formats.size > 0 || filters.searchQuery || filters.hideWatched
+        ? 'No matches match your filters'
+        : undefined
 
   const handlePlay = useCallback(
     (youtubeVideoId: string) => {
@@ -251,8 +249,8 @@ export function FeedClient({ initialFeed, userName, userEmail, userImage }: { in
 
       <div className="px-4 pt-3">
         <FilterBar
-          channels={channels}
-          regions={availableRegions}
+          channels={ALL_CHANNELS}
+          regions={ALL_REGIONS}
           formats={availableFormats}
           filters={filters}
           onFilterChange={dispatch}
@@ -270,7 +268,12 @@ export function FeedClient({ initialFeed, userName, userEmail, userImage }: { in
       )}
 
       <main className="flex-1 px-4 py-4" aria-live="polite">
-        <MatchFeed days={filteredFeed} onPlay={handlePlay} followedTeams={followedSet} />
+        <MatchFeed
+          days={filteredFeed}
+          onPlay={handlePlay}
+          followedTeams={followedSet}
+          emptyMessage={emptyMessage}
+        />
       </main>
 
     </div>
