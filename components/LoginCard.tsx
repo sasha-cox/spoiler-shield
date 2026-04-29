@@ -1,36 +1,106 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import { Card, CardContent } from '@/components/ui/card'
+import { motion, useReducedMotion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { Shield } from 'lucide-react'
+import { Shield, EyeOff, Trophy, Zap } from 'lucide-react'
 
 interface LoginCardProps {
   signInAction: () => Promise<void>
 }
 
+const FEATURES = [
+  {
+    icon: EyeOff,
+    title: 'Spoiler-safe',
+    body: 'No scores, no winners, no surprises ruined.',
+  },
+  {
+    icon: Trophy,
+    title: 'Every league',
+    body: 'LCK, LEC, LCS, LPL, CBLOL — plus Caedrel and crew.',
+  },
+  {
+    icon: Zap,
+    title: 'Fresh VODs',
+    body: 'Match uploads pulled directly from YouTube.',
+  },
+]
+
 export function LoginCard({ signInAction }: LoginCardProps) {
+  const prefersReducedMotion = useReducedMotion()
+  const fade = prefersReducedMotion
+    ? { initial: { opacity: 1 }, animate: { opacity: 1 } }
+    : { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } }
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className="w-full max-w-sm"
+      {...fade}
+      transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+      className="relative w-full max-w-md"
     >
-      <Card className="bg-surface ring-gold/15 text-center">
-        <CardContent className="flex flex-col items-center py-8 px-6">
-          {/* Shield icon */}
-          <Shield className="size-16 text-gold mb-6" strokeWidth={1.5} />
+      <div className="relative overflow-hidden rounded-2xl border border-gold/20 bg-[#0d0d0d] ring-1 ring-gold/10 shadow-[0_30px_80px_-20px_rgba(212,168,67,0.18)]">
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/60 to-transparent"
+        />
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -inset-x-10 -top-32 h-64 bg-[radial-gradient(ellipse_at_center,rgba(212,168,67,0.18),transparent_70%)]"
+        />
 
-          <h1 className="font-display text-3xl font-bold text-white uppercase tracking-widest mb-2">
-            Spoiler Shield
+        <div className="relative flex flex-col px-7 pt-9 pb-7 text-center">
+          <div className="relative mx-auto mb-5 flex size-16 items-center justify-center">
+            <span
+              aria-hidden
+              className="absolute inset-0 rounded-full bg-gold/15 blur-xl"
+            />
+            <span
+              aria-hidden
+              className="absolute inset-0 rounded-full ring-1 ring-gold/30"
+            />
+            <Shield
+              className="relative size-9 text-gold drop-shadow-[0_0_10px_rgba(212,168,67,0.55)]"
+              strokeWidth={1.75}
+            />
+          </div>
+
+          <p className="font-display text-[10px] uppercase tracking-[0.4em] text-gold/80 mb-3">
+            Pro League Esports
+          </p>
+
+          <h1 className="font-display text-4xl font-bold uppercase tracking-[0.1em] leading-none mb-3">
+            <span className="text-white">Spoiler</span>
+            <span className="text-gold">Shield</span>
           </h1>
-          <p className="text-zinc-500 mb-8">Spoiler-free LoL esports VODs</p>
+
+          <p className="text-text-secondary text-sm leading-relaxed max-w-xs mx-auto mb-7">
+            Watch every pro match VOD without learning who won. A spoiler-free feed
+            for League of Legends esports.
+          </p>
+
+          <ul className="flex flex-col gap-2.5 mb-7 text-left">
+            {FEATURES.map(({ icon: Icon, title, body }) => (
+              <li
+                key={title}
+                className="flex items-start gap-3 rounded-lg border border-white/[0.04] bg-white/[0.02] px-3 py-2.5"
+              >
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-gold/10 ring-1 ring-gold/20">
+                  <Icon className="size-3.5 text-gold" strokeWidth={2} />
+                </span>
+                <div className="min-w-0">
+                  <p className="font-display text-xs font-semibold uppercase tracking-[0.12em] text-white">
+                    {title}
+                  </p>
+                  <p className="text-xs text-text-secondary leading-snug mt-0.5">{body}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
 
           <form action={signInAction} className="w-full">
             <Button
               type="submit"
-              className="w-full bg-white text-black font-semibold hover:bg-zinc-200 ring-1 ring-gold/30 hover:ring-gold/60 cursor-pointer h-11"
+              className="w-full bg-white text-black font-semibold hover:bg-zinc-100 ring-1 ring-gold/40 hover:ring-gold/70 hover:shadow-[0_0_24px_-4px_rgba(212,168,67,0.5)] cursor-pointer h-11 transition-all"
               size="lg"
             >
               <svg className="size-5" viewBox="0 0 24 24">
@@ -42,8 +112,12 @@ export function LoginCard({ signInAction }: LoginCardProps) {
               Sign in with Google
             </Button>
           </form>
-        </CardContent>
-      </Card>
+
+          <p className="mt-4 text-[11px] text-zinc-600 font-display uppercase tracking-[0.2em]">
+            Free · No ads · Open source
+          </p>
+        </div>
+      </div>
     </motion.div>
   )
 }

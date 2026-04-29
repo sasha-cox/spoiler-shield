@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useMemo, useEffect, useReducer } from 'react'
 import { signOut } from 'next-auth/react'
+import Link from 'next/link'
 import { FilterBar } from '@/components/FilterBar'
 import { MatchFeed } from '@/components/MatchFeed'
 import { markWatched, getWatchedVods } from '@/lib/watched-store'
@@ -13,8 +14,6 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Shield, RefreshCw, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { FeedDay, FeedFilters, FilterAction, FeedFormat } from '@/lib/types'
-
-// ── Filter state ────────────────────────────────────────────────────────
 
 const initialFilters: FeedFilters = {
   channel: null,
@@ -49,8 +48,6 @@ function filterReducer(state: FeedFilters, action: FilterAction): FeedFilters {
   }
 }
 
-// ── Helper functions ────────────────────────────────────────────────────
-
 function applyWatchedState(days: FeedDay[], watched: Set<string>): FeedDay[] {
   return days.map((day) => ({
     ...day,
@@ -63,12 +60,7 @@ function applyWatchedState(days: FeedDay[], watched: Set<string>): FeedDay[] {
   }))
 }
 
-// All channels supported by the app, in config order — keeps the filter bar
-// stable so users can see which leagues exist even when a given league has no
-// recent matches in the feed.
 const ALL_CHANNELS: string[] = MONITORED_CHANNELS.map((c) => c.name)
-
-// All regions supported by the app, in config order.
 const ALL_REGIONS = Object.values(REGIONS)
 
 function extractFormats(days: FeedDay[]): FeedFormat[] {
@@ -98,18 +90,13 @@ function filterDays(days: FeedDay[], filters: FeedFilters): FeedDay[] {
     .map((day) => ({
       ...day,
       matches: day.matches.filter((match) => {
-        // Channel filter
         if (filters.channel && match.channelName !== filters.channel) return false
-        // Region filter (multi-select: show if match region is in selected set)
         if (filters.regions.size > 0 && match.region && !filters.regions.has(regionIdFromShortCode(match.region))) return false
-        // Format filter
         if (filters.formats.size > 0 && !filters.formats.has(match.format)) return false
-        // Search filter
         if (filters.searchQuery.trim()) {
           const q = filters.searchQuery.toLowerCase()
           if (!match.teamA.toLowerCase().includes(q) && !match.teamB.toLowerCase().includes(q)) return false
         }
-        // Hide watched
         if (filters.hideWatched && match.watched) return false
         return true
       }),
@@ -117,15 +104,12 @@ function filterDays(days: FeedDay[], filters: FeedFilters): FeedDay[] {
     .filter((day) => day.matches.length > 0)
 }
 
-// Map region short codes (LCK, LEC, etc.) back to region IDs (KR, EU, etc.)
 function regionIdFromShortCode(shortCode: string): string {
   for (const [id, region] of Object.entries(REGIONS)) {
     if (region.shortCode === shortCode) return id
   }
   return shortCode
 }
-
-// ── Component ───────────────────────────────────────────────────────────
 
 export function FeedClient({ initialFeed, userName, userEmail, userImage }: { initialFeed: FeedDay[]; userName?: string; userEmail?: string; userImage?: string }) {
   const [rawFeed, setRawFeed] = useState<FeedDay[]>(initialFeed)
@@ -135,7 +119,6 @@ export function FeedClient({ initialFeed, userName, userEmail, userImage }: { in
   const [refreshError, setRefreshError] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
 
-  // Hydrate client state after mount to avoid SSR mismatch
   useEffect(() => {
     setWatchedSet(getWatchedVods())
     setFollowedSet(getFollowedTeams())
@@ -156,7 +139,7 @@ export function FeedClient({ initialFeed, userName, userEmail, userImage }: { in
 
   const hasFeedContent = rawFeed.some((d) => d.matches.length > 0)
   const emptyMessage = !hasFeedContent
-    ? undefined // Use default "No VODs ready yet" copy
+    ? undefined
     : filters.channel
       ? `No ${filters.channel} matches in the current feed`
       : filters.regions.size > 0 || filters.formats.size > 0 || filters.searchQuery || filters.hideWatched
@@ -201,53 +184,74 @@ export function FeedClient({ initialFeed, userName, userEmail, userImage }: { in
   }, [])
 
   return (
-    <div className="flex flex-col flex-1 max-w-lg mx-auto w-full">
-      <header className="flex items-center justify-between px-4 py-4 border-b border-gold/20">
-        <div className="flex items-center gap-2">
-          <Shield className="size-6 text-gold" />
-          <h1 className="font-display text-2xl font-bold text-gold">
-            Spoiler Shield
-          </h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            aria-label="Refresh feed"
-            className="text-zinc-400 hover:text-white"
-          >
-            <RefreshCw className={cn('size-4', isRefreshing && 'animate-spin')} />
-            <span className="hidden sm:inline">Refresh</span>
-          </Button>
+    <div className="relative flex flex-col flex-1 max-w-lg mx-auto w-full">
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-[radial-gradient(ellipse_at_top,rgba(212,168,67,0.08),transparent_70%)]"
+      />
 
-          <div className="flex items-center gap-2 rounded-full bg-surface-border pl-1 pr-2 py-1">
-            <Avatar size="sm">
-              {userImage ? (
-                <AvatarImage src={userImage} alt={userName ?? ''} referrerPolicy="no-referrer" />
-              ) : null}
-              <AvatarFallback className="bg-zinc-700 text-white text-[10px]">
-                {userName?.charAt(0)?.toUpperCase() ?? '?'}
-              </AvatarFallback>
-            </Avatar>
-            <span className="text-xs text-zinc-300 max-w-[120px] truncate hidden sm:inline">
-              {userEmail ?? userName ?? 'User'}
+      <header className="sticky top-0 z-30 backdrop-blur-md bg-[#0a0a0a]/80 border-b border-gold/10">
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-gold/40 to-transparent"
+        />
+        <div className="flex items-center justify-between px-4 py-3.5">
+          <Link href="/" className="group flex items-center gap-2.5 min-w-0">
+            <span className="relative flex items-center justify-center">
+              <span
+                aria-hidden
+                className="absolute inset-0 rounded-full bg-gold/20 blur-md group-hover:bg-gold/30 transition-colors"
+              />
+              <Shield
+                className="relative size-6 text-gold drop-shadow-[0_0_6px_rgba(212,168,67,0.5)]"
+                strokeWidth={2}
+              />
             </span>
+            <h1 className="font-display text-xl font-bold uppercase tracking-[0.18em] leading-none">
+              <span className="text-white">Spoiler</span>
+              <span className="text-gold">Shield</span>
+            </h1>
+          </Link>
+
+          <div className="flex items-center gap-1.5">
             <Button
               variant="ghost"
-              size="icon-xs"
-              onClick={() => signOut({ callbackUrl: '/login' })}
-              aria-label="Sign out"
-              className="text-zinc-500 hover:text-white"
+              size="icon-sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              aria-label="Refresh feed"
+              className="text-zinc-500 hover:text-gold hover:bg-gold/10"
             >
-              <LogOut className="size-3.5" />
+              <RefreshCw className={cn('size-4', isRefreshing && 'animate-spin')} />
             </Button>
+
+            <div className="flex items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-950/80 pl-1 pr-1 py-0.5">
+              <Avatar size="sm" className="ring-1 ring-gold/30">
+                {userImage ? (
+                  <AvatarImage src={userImage} alt={userName ?? ''} referrerPolicy="no-referrer" />
+                ) : null}
+                <AvatarFallback className="bg-zinc-800 text-gold text-[10px] font-bold">
+                  {userName?.charAt(0)?.toUpperCase() ?? '?'}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-xs text-zinc-400 max-w-[110px] truncate hidden sm:inline">
+                {userName ?? userEmail ?? 'User'}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                onClick={() => signOut({ callbackUrl: '/login' })}
+                aria-label="Sign out"
+                className="text-zinc-600 hover:text-gold hover:bg-transparent"
+              >
+                <LogOut className="size-3.5" />
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="px-4 pt-3">
+      <div className="relative px-4 pt-4">
         <FilterBar
           channels={ALL_CHANNELS}
           regions={ALL_REGIONS}
@@ -262,12 +266,12 @@ export function FeedClient({ initialFeed, userName, userEmail, userImage }: { in
       </div>
 
       {refreshError && (
-        <div className="mx-4 mt-2 px-3 py-2 rounded-md bg-destructive/10 text-destructive text-sm">
+        <div className="mx-4 mt-3 px-3 py-2 rounded-md border border-destructive/30 bg-destructive/10 text-destructive text-sm">
           Failed to refresh feed. Please try again.
         </div>
       )}
 
-      <main className="flex-1 px-4 py-4" aria-live="polite">
+      <main className="relative flex-1 px-4 py-5" aria-live="polite">
         <MatchFeed
           days={filteredFeed}
           onPlay={handlePlay}
@@ -275,7 +279,6 @@ export function FeedClient({ initialFeed, userName, userEmail, userImage }: { in
           emptyMessage={emptyMessage}
         />
       </main>
-
     </div>
   )
 }

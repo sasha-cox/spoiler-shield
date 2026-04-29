@@ -37,8 +37,11 @@ export function MatchFeed({ days, onPlay, followedTeams, emptyMessage }: MatchFe
 
   if (days.length === 0) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <p className="text-text-secondary text-xl">
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <div className="font-display text-xs uppercase tracking-[0.3em] text-zinc-600 mb-3">
+          Standby
+        </div>
+        <p className="text-text-secondary text-lg max-w-xs">
           {emptyMessage ?? <>No VODs ready yet — <span className="text-gold">check back soon</span></>}
         </p>
       </div>
@@ -48,17 +51,25 @@ export function MatchFeed({ days, onPlay, followedTeams, emptyMessage }: MatchFe
   const variants = prefersReducedMotion ? noMotionVariants : cardVariants
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-10">
       {days.map((day) => (
         <section key={day.date} data-testid="feed-day">
           <h2
             data-testid="day-header"
-            className="sticky top-0 z-10 bg-[#0a0a0a]/95 backdrop-blur-sm py-3 font-display text-sm font-semibold text-zinc-400 uppercase tracking-widest border-b border-zinc-800/50 mb-4"
+            className="sticky top-0 z-10 -mx-4 px-4 mb-4 bg-gradient-to-b from-[#0a0a0a] via-[#0a0a0a]/95 to-transparent backdrop-blur-sm pb-3 pt-3"
           >
-            {day.label}
+            <span className="flex items-baseline gap-3">
+              <span className="font-display text-xl font-bold uppercase tracking-[0.18em] text-white">
+                {day.label}
+              </span>
+              <span className="h-px flex-1 bg-gradient-to-r from-gold/30 via-gold/10 to-transparent" />
+              <span className="font-display text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+                {day.matches.length} {day.matches.length === 1 ? 'match' : 'matches'}
+              </span>
+            </span>
           </h2>
 
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
             {day.matches.map((match, index) => {
               const isFollowed = followedTeams
                 ? followedTeams.has(match.teamA) || followedTeams.has(match.teamB)

@@ -1,11 +1,7 @@
 'use client'
 
-import { useState } from 'react'
 import type { FeedMatch } from '@/lib/types'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Play, Star, Clock, Youtube } from 'lucide-react'
+import { Star, Play, Youtube } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 function formatLabel(format: FeedMatch['format']): string {
@@ -19,7 +15,6 @@ function formatLabel(format: FeedMatch['format']): string {
   }
 }
 
-/** Convert ALL CAPS event names to Title Case, preserving short numbers/years */
 function toTitleCase(str: string): string {
   return str
     .toLowerCase()
@@ -31,26 +26,11 @@ function toTitleCase(str: string): string {
     .join(' ')
 }
 
-/** Extract a short abbreviation from a team name (e.g. "G2 Esports" → "G2") */
 function teamAbbr(name: string): string {
   if (name.length <= 3) return name.toUpperCase()
   const firstWord = name.split(/\s+/)[0]
   if (firstWord.length <= 4) return firstWord.toUpperCase()
   return name.slice(0, 3).toUpperCase()
-}
-
-/** Format a relative time string from an ISO date */
-function timeAgo(isoDate: string): string {
-  const now = Date.now()
-  const then = new Date(isoDate).getTime()
-  const diffMs = now - then
-  const minutes = Math.floor(diffMs / 60000)
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  if (days === 1) return '1 day ago'
-  return `${days} days ago`
 }
 
 interface MatchCardProps {
@@ -59,124 +39,139 @@ interface MatchCardProps {
   isFollowed?: boolean
 }
 
-export function MatchCard({ match, onPlay, isFollowed }: MatchCardProps) {
-  const [showTime, setShowTime] = useState(false)
+export function MatchCard({ match, isFollowed }: MatchCardProps) {
+  const eventDisplay =
+    match.eventName === match.eventName.toUpperCase()
+      ? toTitleCase(match.eventName)
+      : match.eventName
 
-  const eventDisplay = match.eventName === match.eventName.toUpperCase()
-    ? toTitleCase(match.eventName)
-    : match.eventName
+  const accentColor = match.regionColor ?? '#D4A843'
+  const href = match.youtubeVideoId ? `/watch/${match.youtubeVideoId}` : undefined
+
+  const Wrapper: React.ElementType = href ? 'a' : 'div'
+  const wrapperProps = href ? { href } : {}
 
   return (
-    <Card
+    <Wrapper
+      {...wrapperProps}
       data-testid="match-card"
       className={cn(
-        'relative border-l-2 bg-surface ring-surface-border',
-        isFollowed ? 'border-l-gold ring-gold/15' : 'border-l-gold',
-        match.watched && 'opacity-40'
+        'group relative block overflow-hidden rounded-xl bg-surface',
+        'ring-1 ring-surface-border transition-all duration-300',
+        href && 'hover:ring-gold/40 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_-12px_rgba(212,168,67,0.25)] cursor-pointer',
+        match.watched && 'opacity-45',
       )}
     >
-      <CardContent className="relative pt-1 pb-1">
-        {/* Badges row */}
-        <div className="absolute top-0 right-0 flex items-center gap-1.5">
-          {isFollowed && (
-            <Star className="size-3.5 text-gold fill-gold" />
-          )}
-          {match.watched && (
-            <Badge
-              variant="secondary"
-              className="bg-zinc-700/60 text-zinc-400 text-[10px] uppercase tracking-wider"
-            >
-              Watched
-            </Badge>
-          )}
-          {match.region && (
-            <span
-              className="rounded-full px-2 py-0.5 text-xs font-medium"
-              style={{ backgroundColor: `${match.regionColor}20`, color: match.regionColor }}
-            >
-              {match.regionFlag} {match.region}
+      <span
+        aria-hidden
+        className={cn(
+          'pointer-events-none absolute inset-y-0 left-0 w-[3px]',
+          isFollowed && 'shadow-[0_0_16px_rgba(212,168,67,0.45)]',
+        )}
+        style={{
+          background: `linear-gradient(to bottom, ${accentColor}, ${accentColor}40)`,
+        }}
+      />
+
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent"
+      />
+
+      <div className="relative flex flex-col gap-3 px-4 py-3.5 pl-5">
+        <div className="flex items-center justify-between gap-2 text-[11px] tracking-[0.18em] uppercase">
+          <div className="flex items-center gap-2 min-w-0">
+            {match.region && (
+              <span
+                className="inline-flex items-center gap-1.5 font-semibold"
+                style={{ color: accentColor }}
+              >
+                <span aria-hidden>{match.regionFlag}</span>
+                {match.region}
+              </span>
+            )}
+            {match.region && (
+              <span className="size-1 rounded-full bg-zinc-700 shrink-0" aria-hidden />
+            )}
+            <span className="font-display text-zinc-400 truncate">
+              {eventDisplay}
             </span>
-          )}
-          <Badge
-            className="bg-gold/15 text-gold border-gold/20"
-          >
-            {formatLabel(match.format)}
-          </Badge>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {isFollowed && (
+              <Star className="size-3.5 text-gold fill-gold drop-shadow-[0_0_4px_rgba(212,168,67,0.6)]" />
+            )}
+            {match.watched && (
+              <span className="rounded-sm bg-zinc-800 px-1.5 py-0.5 text-[9px] font-bold tracking-widest text-zinc-500">
+                WATCHED
+              </span>
+            )}
+            <span
+              className="rounded-sm border border-gold/30 bg-gold/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-gold"
+            >
+              {formatLabel(match.format)}
+            </span>
+          </div>
         </div>
 
-        {/* Teams row */}
-        <div className="flex items-center justify-center gap-5 py-3 mt-2">
-          {/* Team A */}
-          <div className="flex flex-col items-center gap-0.5 min-w-[80px]">
-            <span className="text-xl font-bold text-white tracking-wide">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+          <div className="flex flex-col items-end text-right min-w-0">
+            <span className="font-display text-3xl font-bold leading-none text-white tracking-tight">
               {teamAbbr(match.teamA)}
             </span>
-            <span className="text-xs text-zinc-500 truncate max-w-[100px]">
+            <span className="mt-1 text-xs text-text-secondary truncate max-w-full">
               {match.teamA}
             </span>
           </div>
 
-          {/* Divider */}
-          <span className="text-xs font-semibold text-zinc-600 uppercase tracking-widest">vs</span>
+          <div className="relative flex items-center justify-center">
+            <span
+              aria-hidden
+              className="absolute inset-0 flex items-center justify-center"
+            >
+              <span
+                className="h-6 w-px"
+                style={{ background: `linear-gradient(to bottom, transparent, ${accentColor}55, transparent)` }}
+              />
+            </span>
+            <span className="relative font-display text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-600 px-2 bg-surface">
+              vs
+            </span>
+          </div>
 
-          {/* Team B */}
-          <div className="flex flex-col items-center gap-0.5 min-w-[80px]">
-            <span className="text-xl font-bold text-white tracking-wide">
+          <div className="flex flex-col items-start text-left min-w-0">
+            <span className="font-display text-3xl font-bold leading-none text-white tracking-tight">
               {teamAbbr(match.teamB)}
             </span>
-            <span className="text-xs text-zinc-500 truncate max-w-[100px]">
+            <span className="mt-1 text-xs text-text-secondary truncate max-w-full">
               {match.teamB}
             </span>
           </div>
         </div>
 
-        {/* Event name */}
-        <p className="text-center text-xs text-zinc-500 mb-2">
-          {eventDisplay}
-        </p>
-
-        {/* Channel + time row */}
-        <div className="flex items-center justify-center gap-3 mb-3">
-          {match.channelName && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-zinc-800 px-2.5 py-0.5 text-[11px] font-medium text-zinc-300">
-              <Youtube className="size-3 text-red-500" />
-              {match.channelName}
-            </span>
-          )}
-          {match.publishedAt && (
-            <button
-              onClick={() => setShowTime(!showTime)}
-              className={cn(
-                'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-colors',
-                showTime
-                  ? 'bg-zinc-800 text-zinc-400'
-                  : 'bg-zinc-800/50 text-zinc-600 hover:text-zinc-400'
-              )}
-              aria-label={showTime ? 'Hide upload time' : 'Show upload time (possible spoiler)'}
-            >
-              <Clock className="size-3" />
-              {showTime ? timeAgo(match.publishedAt) : 'Posted ???'}
-            </button>
-          )}
-        </div>
-
-        {/* Watch link */}
         {match.youtubeVideoId && (
-          <a
-            href={`/watch/${match.youtubeVideoId}`}
-            className="block w-full"
-          >
-            <Button
-              className="w-full bg-gradient-to-r from-gold to-[#b8912e] text-black font-semibold hover:from-[#e0b84d] hover:to-[#c9a035] cursor-pointer"
-              size="lg"
-              render={<span />}
+          <div className="flex items-center justify-between border-t border-white/[0.04] pt-3 mt-1">
+            <div className="flex items-center gap-1.5 text-[11px] text-text-secondary min-w-0">
+              {match.channelName && (
+                <>
+                  <Youtube className="size-3 text-red-500/80 shrink-0" />
+                  <span className="truncate">{match.channelName}</span>
+                </>
+              )}
+            </div>
+            <span
+              className={cn(
+                'inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-gold',
+                'transition-transform duration-300 group-hover:translate-x-0.5',
+              )}
             >
-              <Play className="size-4 fill-current" />
               Watch
-            </Button>
-          </a>
+              <Play className="size-3 fill-gold" />
+            </span>
+          </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </Wrapper>
   )
 }
