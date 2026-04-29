@@ -1,9 +1,13 @@
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Shield } from 'lucide-react'
 
+const YOUTUBE_VIDEO_ID = /^[A-Za-z0-9_-]{11}$/
+
 export default async function WatchPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+  if (!YOUTUBE_VIDEO_ID.test(id)) notFound()
 
   return (
     <div className="fixed inset-0 bg-[#050505] flex items-center justify-center overflow-hidden">
