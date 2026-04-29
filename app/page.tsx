@@ -13,7 +13,7 @@ async function fetchFeed(): Promise<FeedDay[]> {
 
   const allUploads: RawUpload[] = []
   for (const channel of MONITORED_CHANNELS) {
-    const uploads = await getRecentUploads(channel.youtubeChannelId, apiKey, 30)
+    const uploads = await getRecentUploads(channel.youtubeChannelId, apiKey, 21)
     for (const upload of uploads) {
       allUploads.push({ ...upload, channelName: channel.name })
     }
