@@ -1,4 +1,5 @@
 import { TEAM_REGIONS } from './teams.generated'
+import { LEAGUES } from './leagues'
 
 export interface Region {
   id: string
@@ -17,26 +18,13 @@ export const REGIONS: Record<string, Region> = {
   INT: { id: 'INT', name: 'International', shortCode: 'INT', flag: '🌍', color: '#D4A843' },
 }
 
-// Event name keywords that indicate a region. Order matters — longer / more
-// specific patterns first so "LCK Challengers" doesn't match plain "LCK"
-// when both keywords exist (Object.entries preserves insertion order).
-const EVENT_REGIONS: Record<string, string> = {
-  // International
-  'WORLDS': 'INT', 'MSI': 'INT', 'FIRST STAND': 'INT', 'EMEA MASTERS': 'INT', 'AMERICAS CUP': 'INT',
-  // KR
-  'LCK CHALLENGERS': 'KR', 'LCK': 'KR',
-  // EU
-  'LEC': 'EU', 'LFL': 'EU', 'PRIME LEAGUE': 'EU', 'NLC': 'EU', 'HITPOINT': 'EU',
-  'LA LIGUE FRANÇAISE': 'EU', 'LA LIGUE FRANCAISE': 'EU',
-  // NA
-  'LCS': 'NA', 'NACL': 'NA',
-  // CN
-  'LPL': 'CN',
-  // BR
-  'CBLOL': 'BR', 'CIRCUITO DESAFIANTE': 'BR',
-  // Pacific / Asia
-  'LCP': 'INT', 'LJL': 'INT', 'VCS': 'INT',
-}
+// Event-name keywords → region IDs, derived from the central LEAGUES table.
+// Sorted longest-first so "LCK Challengers" wins over plain "LCK".
+const EVENT_REGION_HINTS: Array<{ keyword: string; regionId: string }> = LEAGUES
+  .flatMap((league) =>
+    league.titleHints.map((hint) => ({ keyword: hint.toUpperCase(), regionId: league.regionId })),
+  )
+  .sort((a, b) => b.keyword.length - a.keyword.length)
 
 export function getRegionForTeam(teamName: string): Region | null {
   const regionId = TEAM_REGIONS[teamName]
@@ -45,7 +33,7 @@ export function getRegionForTeam(teamName: string): Region | null {
 
 export function getRegionForEvent(eventName: string): Region | null {
   const upper = eventName.toUpperCase()
-  for (const [keyword, regionId] of Object.entries(EVENT_REGIONS)) {
+  for (const { keyword, regionId } of EVENT_REGION_HINTS) {
     if (upper.includes(keyword)) return REGIONS[regionId]
   }
   return null

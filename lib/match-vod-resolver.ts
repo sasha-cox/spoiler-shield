@@ -15,41 +15,14 @@
  *      better to omit than display the wrong matchup.
  */
 
+import { leagueSlugFromTitle } from './leagues'
+import { channelByName, channelPriority } from './config'
 import type { ScheduledMatch } from './lolesports'
 import type { RawUpload } from './feed-utils'
 
 export interface VodCandidate {
   upload: RawUpload
   channelPriority: number
-}
-
-const LEAGUE_HINT_FROM_TITLE = /\b(LCK|LEC|LCS|LPL|CBLOL)\b/i
-const LEAGUE_NAME_TO_SLUG: Record<string, string> = {
-  LCK: 'lck',
-  LEC: 'lec',
-  LCS: 'lcs',
-  LPL: 'lpl',
-  CBLOL: 'cblol-brazil',
-}
-
-const CHANNEL_LEAGUE_HINT: Record<string, string> = {
-  LCK: 'lck',
-  LEC: 'lec',
-  LCS: 'lcs',
-  LPL: 'lpl',
-  CBLOL: 'cblol-brazil',
-}
-
-const CHANNEL_PRIORITY: Record<string, number> = {
-  Caedrel: 0,
-  IWDominate: 0,
-  LS: 0,
-  LCK: 1,
-  LEC: 1,
-  LCS: 1,
-  LPL: 1,
-  CBLOL: 1,
-  'LoL Esports': 2,
 }
 
 const UPLOAD_WINDOW_BEFORE_MS = 60 * 60 * 1000          // 1 hour pre-start
@@ -62,9 +35,9 @@ const UPLOAD_WINDOW_AFTER_MS = 36 * 60 * 60 * 1000      // 36 hours after
 const NON_FULL_MATCH_TITLE = /\bhighlights\b|\brecap\b|\bpreview\b|\breaction\b|\bbest of\b|\bcompilation\b|\bmontage\b|\b#shorts\b|press conference|tier ?list/i
 
 function leagueHintForUpload(upload: RawUpload): string | null {
-  const m = upload.title.match(LEAGUE_HINT_FROM_TITLE)
-  if (m) return LEAGUE_NAME_TO_SLUG[m[1].toUpperCase()] ?? null
-  return CHANNEL_LEAGUE_HINT[upload.channelName] ?? null
+  const fromTitle = leagueSlugFromTitle(upload.title)
+  if (fromTitle) return fromTitle
+  return channelByName(upload.channelName)?.leagueSlug ?? null
 }
 
 function teamMatchesInTitle(team: ScheduledMatch['teamA'], title: string): boolean {
@@ -134,7 +107,7 @@ export function resolveVodsForSchedule(
       orphans.push(upload)
       continue
     }
-    const priority = CHANNEL_PRIORITY[upload.channelName] ?? 99
+    const priority = channelPriority(upload.channelName)
     const existing = byMatchId.get(match.id)
     if (!existing || priority < existing.channelPriority) {
       byMatchId.set(match.id, { upload, channelPriority: priority })

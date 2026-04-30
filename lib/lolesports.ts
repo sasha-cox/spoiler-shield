@@ -57,41 +57,7 @@ interface ScheduleResponse {
   data?: { schedule?: { events?: RawEvent[]; pages?: { older?: string | null } } }
 }
 
-/**
- * Leagues whose matches we surface in the feed. Each entry is a slug + ID
- * straight from `getLeagues`. Adding a new league = one line; the rest of
- * the pipeline picks it up automatically.
- *
- * Tier-1 official + tier-2 official + international + creator-relevant
- * (NLC has Caedrel's Los Ratones, LFL/Prime League/EMEA Masters get cast
- * frequently). For events that aren't on lolesports at all (showmatches,
- * Twitch Rivals, etc.), the unofficial-resolver layer takes over.
- */
-const TRACKED_LEAGUES: Array<{ slug: string; id: string }> = [
-  // Tier-1
-  { slug: 'lck',          id: '98767991310872058' },
-  { slug: 'lec',          id: '98767991302996019' },
-  { slug: 'lcs',          id: '98767991299243165' },
-  { slug: 'lpl',          id: '98767991314006698' },
-  { slug: 'cblol-brazil', id: '98767991332355509' },
-  { slug: 'lcp',          id: '113476371197627891' },
-  // Tier-2
-  { slug: 'nlc',                    id: '105266098308571975' },
-  { slug: 'lfl',                    id: '105266103462388553' },
-  { slug: 'primeleague',            id: '105266091639104326' },
-  { slug: 'hitpoint_masters',       id: '105266106309666619' },
-  { slug: 'lck_challengers_league', id: '98767991335774713' },
-  { slug: 'nacl',                   id: '109511549831443335' },
-  { slug: 'cd',                     id: '105549980953490846' },
-  { slug: 'ljl-japan',              id: '98767991349978712' },
-  { slug: 'vcs',                    id: '107213827295848783' },
-  // International
-  { slug: 'worlds',       id: '98767975604431411' },
-  { slug: 'msi',          id: '98767991325878492' },
-  { slug: 'first_stand',  id: '113464388705111224' },
-  { slug: 'emea_masters', id: '100695891328981122' },
-  { slug: 'americas_cup', id: '116096325848746167' },
-]
+import { LEAGUES } from './leagues'
 
 let scheduleCache: { data: ScheduledMatch[]; timestamp: number } | null = null
 const SCHEDULE_CACHE_TTL_MS = 30 * 60 * 1000
@@ -158,7 +124,7 @@ export async function getRecentScheduledMatches(sinceDays: number = 28): Promise
   }
 
   const all = (
-    await Promise.all(TRACKED_LEAGUES.map((l) => fetchScheduleForLeague(l.id)))
+    await Promise.all(LEAGUES.map((l) => fetchScheduleForLeague(l.lolesportsId)))
   ).flat()
 
   scheduleCache = { data: all, timestamp: Date.now() }

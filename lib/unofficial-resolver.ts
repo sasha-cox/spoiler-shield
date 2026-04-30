@@ -18,6 +18,7 @@
 import { TEAM_ALIASES, normalizeTeamName } from './team-aliases'
 import { TEAM_REGIONS } from './teams.generated'
 import { REGIONS, type Region } from './regions'
+import { channelPriority } from './config'
 import type { RawUpload } from './feed-utils'
 import type { FeedMatch } from './types'
 
@@ -101,18 +102,6 @@ function regionForUnofficial(teamA: string, teamB: string): Region {
   return REGIONS.INT
 }
 
-const CHANNEL_PRIORITY: Record<string, number> = {
-  Caedrel: 0,
-  IWDominate: 0,
-  LS: 0,
-  LCK: 1,
-  LEC: 1,
-  LCS: 1,
-  LPL: 1,
-  CBLOL: 1,
-  'LoL Esports': 2,
-}
-
 /**
  * Builds unofficial FeedMatch entries from orphan uploads. Dedupes the same
  * canonical (teamA, teamB, date) pairing across channels via channel priority.
@@ -133,7 +122,7 @@ export function buildUnofficialMatches(orphans: RawUpload[]): FeedMatch[] {
     const date = upload.publishedAt.toISOString().slice(0, 10)
     const dedupKey = [parsed.teamA, parsed.teamB].sort().join('|') + '|' + date
     const region = regionForUnofficial(parsed.teamA, parsed.teamB)
-    const priority = CHANNEL_PRIORITY[upload.channelName] ?? 99
+    const priority = channelPriority(upload.channelName)
 
     const candidate: FeedMatch = {
       id: `unofficial:${upload.videoId}`,
