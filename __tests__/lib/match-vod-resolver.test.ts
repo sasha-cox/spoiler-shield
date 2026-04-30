@@ -35,9 +35,9 @@ describe('resolveVodsForSchedule', () => {
         title: 'ZEUS vs KINGEN | HLE VS NS HEATS UP LCK SPRING 2026',
       }),
     ]
-    const vods = resolveVodsForSchedule(schedule, uploads)
-    expect(vods.has('a')).toBe(true)
-    expect(vods.get('a')?.upload.videoId).toBe('v1')
+    const { byMatchId } = resolveVodsForSchedule(schedule, uploads)
+    expect(byMatchId.has('a')).toBe(true)
+    expect(byMatchId.get('a')?.upload.videoId).toBe('v1')
   })
 
   it('matches via canonical team name when code is not in title', () => {
@@ -47,8 +47,8 @@ describe('resolveVodsForSchedule', () => {
         title: 'Hanwha Life Esports vs Nongshim RedForce | LCK Spring',
       }),
     ]
-    const vods = resolveVodsForSchedule(schedule, uploads)
-    expect(vods.has('a')).toBe(true)
+    const { byMatchId } = resolveVodsForSchedule(schedule, uploads)
+    expect(byMatchId.has('a')).toBe(true)
   })
 
   it('drops uploads where league hint disagrees with schedule league', () => {
@@ -58,8 +58,8 @@ describe('resolveVodsForSchedule', () => {
         title: 'HLE VS NS | LEC SPRING 2026',  // wrong league
       }),
     ]
-    const vods = resolveVodsForSchedule(schedule, uploads)
-    expect(vods.size).toBe(0)
+    const { byMatchId } = resolveVodsForSchedule(schedule, uploads)
+    expect(byMatchId.size).toBe(0)
   })
 
   it('drops uploads outside the time window relative to scheduled startTime', () => {
@@ -70,8 +70,8 @@ describe('resolveVodsForSchedule', () => {
         publishedAt: new Date('2026-04-26T08:00:00Z'),  // 4 days after, outside 36h window
       }),
     ]
-    const vods = resolveVodsForSchedule(schedule, uploads)
-    expect(vods.size).toBe(0)
+    const { byMatchId } = resolveVodsForSchedule(schedule, uploads)
+    expect(byMatchId.size).toBe(0)
   })
 
   it('refuses to guess when title matches multiple scheduled matches in the window', () => {
@@ -88,8 +88,8 @@ describe('resolveVodsForSchedule', () => {
     const uploads = [
       upload({ title: 'HLE NS T1 GEN | LCK BIG WEEK COMPILATION' }),
     ]
-    const vods = resolveVodsForSchedule(schedule, uploads)
-    expect(vods.size).toBe(0)
+    const { byMatchId } = resolveVodsForSchedule(schedule, uploads)
+    expect(byMatchId.size).toBe(0)
   })
 
   it('prefers higher-priority channel when multiple uploads resolve to the same match', () => {
@@ -108,8 +108,8 @@ describe('resolveVodsForSchedule', () => {
         publishedAt: new Date('2026-04-22T20:00:00Z'),
       }),
     ]
-    const vods = resolveVodsForSchedule(schedule, uploads)
-    expect(vods.get('a')?.upload.videoId).toBe('caedrel')
+    const { byMatchId } = resolveVodsForSchedule(schedule, uploads)
+    expect(byMatchId.get('a')?.upload.videoId).toBe('caedrel')
   })
 
   it('uses channel name as a league hint when title is bare', () => {
@@ -120,7 +120,27 @@ describe('resolveVodsForSchedule', () => {
         channelName: 'LCK',
       }),
     ]
-    const vods = resolveVodsForSchedule(schedule, uploads)
-    expect(vods.has('a')).toBe(true)
+    const { byMatchId } = resolveVodsForSchedule(schedule, uploads)
+    expect(byMatchId.has('a')).toBe(true)
+  })
+
+  it('returns uploads with no schedule match as orphans', () => {
+    const schedule = [makeScheduled({ id: 'a' })]
+    const uploads = [
+      upload({ title: 'Caedrel showmatch G2 vs T1' }),
+    ]
+    const { byMatchId, orphans } = resolveVodsForSchedule(schedule, uploads)
+    expect(byMatchId.size).toBe(0)
+    expect(orphans).toHaveLength(1)
+  })
+
+  it('drops highlights uploads entirely (not even orphan candidates)', () => {
+    const schedule = [makeScheduled({ id: 'a' })]
+    const uploads = [
+      upload({ title: 'HLE vs NS HIGHLIGHTS | LCK Spring 2026' }),
+    ]
+    const { byMatchId, orphans } = resolveVodsForSchedule(schedule, uploads)
+    expect(byMatchId.size).toBe(0)
+    expect(orphans).toHaveLength(0)
   })
 })

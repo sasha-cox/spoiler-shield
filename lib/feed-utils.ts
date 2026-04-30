@@ -34,6 +34,10 @@ function dateOf(scheduled: ScheduledMatch): string {
   return scheduled.startTime.slice(0, 10)
 }
 
+function matchupKey(teamA: string, teamB: string): string {
+  return [teamA, teamB].sort().join('|')
+}
+
 /**
  * Schedule team names come from lolesports verbatim and are inconsistently
  * cased ("kt Rolster", "BILIBILI GAMING"). Map to our canonical name when we
@@ -62,11 +66,13 @@ function smartTitleCase(name: string): string {
 /**
  * Builds the spoiler-safe feed from canonical schedule data plus resolved VOD
  * uploads. Matches without a resolved VOD are dropped — we can't show a card
- * a user can't watch.
+ * a user can't watch. Optionally folds in unofficial matches (showmatches,
+ * creator tournaments) parsed from orphan uploads.
  */
 export function buildFeedFromSchedule(
   schedule: ScheduledMatch[],
   vodsByMatchId: Map<string, VodCandidate>,
+  unofficialMatches: FeedMatch[] = [],
 ): FeedDay[] {
   const dayMap = new Map<string, FeedMatch[]>()
 
@@ -81,6 +87,7 @@ export function buildFeedFromSchedule(
 
     const match: FeedMatch = {
       id: scheduled.id,
+      kind: 'official',
       teamA: teamAName,
       teamB: teamBName,
       teamACode: scheduled.teamA.code,
@@ -98,6 +105,31 @@ export function buildFeedFromSchedule(
 
     if (!dayMap.has(dateStr)) dayMap.set(dateStr, [])
     dayMap.get(dateStr)!.push(match)
+  }
+
+  // Track each official matchup's date so unofficial entries for the same
+  // matchup within +/- 3 days get suppressed (covers schedule-vs-upload date
+  // skew when a coverage upload posts a day or two after the match).
+  const officialMatchupDates = new Map<string, number[]>()
+  for (const [dateStr, matches] of dayMap.entries()) {
+    const t = Date.parse(dateStr + 'T00:00:00Z')
+    for (const m of matches) {
+      const key = matchupKey(m.teamA, m.teamB)
+      if (!officialMatchupDates.has(key)) officialMatchupDates.set(key, [])
+      officialMatchupDates.get(key)!.push(t)
+    }
+  }
+
+  const DEDUP_WINDOW_MS = 3 * 24 * 60 * 60 * 1000
+
+  for (const unofficial of unofficialMatches) {
+    const date = unofficial.publishedAt?.slice(0, 10)
+    if (!date) continue
+    const t = Date.parse(date + 'T00:00:00Z')
+    const conflicts = officialMatchupDates.get(matchupKey(unofficial.teamA, unofficial.teamB)) ?? []
+    if (conflicts.some((c) => Math.abs(c - t) <= DEDUP_WINDOW_MS)) continue
+    if (!dayMap.has(date)) dayMap.set(date, [])
+    dayMap.get(date)!.push(unofficial)
   }
 
   return [...dayMap.entries()]

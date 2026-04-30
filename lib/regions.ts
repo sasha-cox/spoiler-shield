@@ -17,10 +17,25 @@ export const REGIONS: Record<string, Region> = {
   INT: { id: 'INT', name: 'International', shortCode: 'INT', flag: '🌍', color: '#D4A843' },
 }
 
-// Event name keywords that indicate a region
+// Event name keywords that indicate a region. Order matters — longer / more
+// specific patterns first so "LCK Challengers" doesn't match plain "LCK"
+// when both keywords exist (Object.entries preserves insertion order).
 const EVENT_REGIONS: Record<string, string> = {
-  'LCK': 'KR', 'LEC': 'EU', 'LCS': 'NA', 'LPL': 'CN', 'CBLOL': 'BR',
-  'WORLDS': 'INT', 'MSI': 'INT', 'FIRST STAND': 'INT',
+  // International
+  'WORLDS': 'INT', 'MSI': 'INT', 'FIRST STAND': 'INT', 'EMEA MASTERS': 'INT', 'AMERICAS CUP': 'INT',
+  // KR
+  'LCK CHALLENGERS': 'KR', 'LCK': 'KR',
+  // EU
+  'LEC': 'EU', 'LFL': 'EU', 'PRIME LEAGUE': 'EU', 'NLC': 'EU', 'HITPOINT': 'EU',
+  'LA LIGUE FRANÇAISE': 'EU', 'LA LIGUE FRANCAISE': 'EU',
+  // NA
+  'LCS': 'NA', 'NACL': 'NA',
+  // CN
+  'LPL': 'CN',
+  // BR
+  'CBLOL': 'BR', 'CIRCUITO DESAFIANTE': 'BR',
+  // Pacific / Asia
+  'LCP': 'INT', 'LJL': 'INT', 'VCS': 'INT',
 }
 
 export function getRegionForTeam(teamName: string): Region | null {

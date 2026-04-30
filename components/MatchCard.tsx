@@ -108,6 +108,14 @@ export function MatchCard({ match, isFollowed }: MatchCardProps) {
                 WATCHED
               </span>
             )}
+            {match.kind === 'unofficial' && (
+              <span
+                title="Not in Riot's official schedule — derived from the upload title. Lower confidence."
+                className="rounded-sm border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-amber-400"
+              >
+                UNOFFICIAL
+              </span>
+            )}
             <span
               className="rounded-sm border border-gold/30 bg-gold/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-gold"
             >

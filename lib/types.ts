@@ -7,6 +7,10 @@ export interface FeedGameEntry {
 
 export interface FeedMatch {
   id: string
+  /** 'official' = sourced from Riot's lolesports schedule; canonical data.
+   *  'unofficial' = derived from a YouTube title alone (showmatches, content-
+   *  creator tournaments, etc.) — lower confidence, badged in the UI. */
+  kind?: 'official' | 'unofficial'
   teamA: string
   teamB: string
   /** Canonical short code (e.g. "DRX", "T1"). From the lolesports schedule

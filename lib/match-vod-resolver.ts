@@ -107,25 +107,38 @@ function findScheduledMatchForUpload(
   return null
 }
 
+export interface ResolveResult {
+  /** Map of scheduled-match ID → best VOD candidate found. */
+  byMatchId: Map<string, VodCandidate>
+  /** Uploads that passed the spoiler-safe content filter but didn't match any
+   *  scheduled match. Candidates for the unofficial-resolver pass. */
+  orphans: RawUpload[]
+}
+
 /**
  * For each scheduled match, attaches the best-priority VOD candidate found.
- * Returns a Map keyed by scheduled-match ID. Only matches with at least one
- * resolved VOD appear in the result.
+ * Uploads with non-full-match titles (highlights, recaps, shorts) are
+ * dropped entirely. Uploads that pass content filtering but don't match
+ * any scheduled match are returned as `orphans` for downstream processing.
  */
 export function resolveVodsForSchedule(
   schedule: ScheduledMatch[],
   uploads: RawUpload[],
-): Map<string, VodCandidate> {
-  const results = new Map<string, VodCandidate>()
+): ResolveResult {
+  const byMatchId = new Map<string, VodCandidate>()
+  const orphans: RawUpload[] = []
   for (const upload of uploads) {
     if (NON_FULL_MATCH_TITLE.test(upload.title)) continue
     const match = findScheduledMatchForUpload(upload, schedule)
-    if (!match) continue
+    if (!match) {
+      orphans.push(upload)
+      continue
+    }
     const priority = CHANNEL_PRIORITY[upload.channelName] ?? 99
-    const existing = results.get(match.id)
+    const existing = byMatchId.get(match.id)
     if (!existing || priority < existing.channelPriority) {
-      results.set(match.id, { upload, channelPriority: priority })
+      byMatchId.set(match.id, { upload, channelPriority: priority })
     }
   }
-  return results
+  return { byMatchId, orphans }
 }

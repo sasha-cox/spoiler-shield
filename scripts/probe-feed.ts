@@ -10,6 +10,7 @@ import { MONITORED_CHANNELS } from '../lib/config.js'
 import { getRecentUploads } from '../lib/youtube.js'
 import { getRecentScheduledMatches } from '../lib/lolesports.js'
 import { resolveVodsForSchedule } from '../lib/match-vod-resolver.js'
+import { buildUnofficialMatches } from '../lib/unofficial-resolver.js'
 import { buildFeedFromSchedule } from '../lib/feed-utils.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -41,10 +42,14 @@ async function main() {
   console.log(`schedule: ${schedule.length} matches`)
   console.log(`uploads:  ${allUploads.length}`)
 
-  const vods = resolveVodsForSchedule(schedule, allUploads)
-  console.log(`resolved: ${vods.size} matches with VODs\n`)
+  const { byMatchId, orphans } = resolveVodsForSchedule(schedule, allUploads)
+  console.log(`resolved: ${byMatchId.size} matches with VODs`)
+  console.log(`orphans:  ${orphans.length} uploads`)
 
-  const feed = buildFeedFromSchedule(schedule, vods)
+  const unofficial = buildUnofficialMatches(orphans)
+  console.log(`unofficial: ${unofficial.length} parsed from orphans\n`)
+
+  const feed = buildFeedFromSchedule(schedule, byMatchId, unofficial)
   console.log(`Feed: ${feed.length} days\n`)
   for (const day of feed.slice(0, 14)) {
     console.log(`══ ${day.date} (${day.label}) — ${day.matches.length} matches ══`)

@@ -3,6 +3,7 @@ import { getRecentUploads } from '@/lib/youtube'
 import { MONITORED_CHANNELS } from '@/lib/config'
 import { getRecentScheduledMatches } from '@/lib/lolesports'
 import { resolveVodsForSchedule } from '@/lib/match-vod-resolver'
+import { buildUnofficialMatches } from '@/lib/unofficial-resolver'
 import { buildFeedFromSchedule } from '@/lib/feed-utils'
 import type { RawUpload } from '@/lib/feed-utils'
 import type { FeedDay } from '@/lib/types'
@@ -45,8 +46,9 @@ async function buildFeed(): Promise<FeedDay[]> {
   ])
 
   const allUploads: RawUpload[] = uploadsByChannel.flat()
-  const vods = resolveVodsForSchedule(schedule, allUploads)
-  return buildFeedFromSchedule(schedule, vods)
+  const { byMatchId, orphans } = resolveVodsForSchedule(schedule, allUploads)
+  const unofficial = buildUnofficialMatches(orphans)
+  return buildFeedFromSchedule(schedule, byMatchId, unofficial)
 }
 
 export async function GET() {
