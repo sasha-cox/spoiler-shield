@@ -63,3 +63,33 @@ jobs:
           echo "YOUTUBE_API_KEY=${{ secrets.YOUTUBE_API_KEY }}" > .env.local
 
       - run: pnpm verify:connectors
+
+  deploy:
+    name: deploy to vercel production
+    runs-on: ubuntu-latest
+    # Native Vercel ↔ GitHub auto-deploy is broken because the gingham
+    # team is linked to a different GitHub identity than the one that owns
+    # this repo. Token-based deploys from CI work regardless of identity
+    # state and benefit from running only after lint/test/build pass.
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm install -g vercel@latest
+
+      - name: Pull Vercel project info
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Build for production
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to production
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
