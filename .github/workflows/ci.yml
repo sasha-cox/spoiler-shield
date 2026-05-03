@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: lint + test + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm lint
+
+      - run: pnpm test:run
+
+      - run: pnpm build
+        env:
+          # Build doesn't need real keys, but Next does need *something*
+          # for env-aware code paths to compile cleanly.
+          YOUTUBE_API_KEY: dummy-for-build
+          GOOGLE_CLIENT_ID: dummy-for-build
+          GOOGLE_CLIENT_SECRET: dummy-for-build
+          AUTH_SECRET: dummy-for-build
+
+  verify-connectors:
+    name: verify external APIs
+    runs-on: ubuntu-latest
+    # Only run on pushes to main so PR runs don't burn YouTube quota for
+    # every commit. Wire to a schedule too if you want continuous health
+    # signal beyond merges.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Write .env.local from secrets
+        run: |
+          echo "YOUTUBE_API_KEY=${{ secrets.YOUTUBE_API_KEY }}" > .env.local
+
+      - run: pnpm verify:connectors

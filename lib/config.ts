@@ -27,8 +27,10 @@ export interface MonitoredChannel {
 }
 
 export const MONITORED_CHANNELS: MonitoredChannel[] = [
-  // Co-streamers
+  // Co-streamers — preferred when present
   { name: 'Caedrel',     youtubeChannelId: 'UCOFiUtKui6-x4T-J7_DgCag', priority: 0 },
+  { name: 'IWDominate',  youtubeChannelId: 'UCb5fmS26ENzQqGuQ7jLaMEg', priority: 0 },
+  { name: 'LS',          youtubeChannelId: 'UCuOqvRRt9GqyIUVTwSB4Ucg', priority: 0 },
   // Official leagues
   { name: 'LCK',         youtubeChannelId: 'UCw1DsweY9b2AKGjV4kGJP1A', leagueSlug: 'lck',          priority: 1 },
   { name: 'LEC',         youtubeChannelId: 'UCWWZjhmokTbezUQr1kbbEYQ', leagueSlug: 'lec',          priority: 1 },
