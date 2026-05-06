@@ -91,7 +91,7 @@ function filterDays(days: FeedDay[], filters: FeedFilters): FeedDay[] {
       ...day,
       matches: day.matches.filter((match) => {
         if (filters.channel && match.channelName !== filters.channel) return false
-        if (filters.regions.size > 0 && match.region && !filters.regions.has(regionIdFromShortCode(match.region))) return false
+        if (filters.regions.size > 0 && match.region && !filters.regions.has(match.region)) return false
         if (filters.formats.size > 0 && !filters.formats.has(match.format)) return false
         if (filters.searchQuery.trim()) {
           const q = filters.searchQuery.toLowerCase()
@@ -104,12 +104,6 @@ function filterDays(days: FeedDay[], filters: FeedFilters): FeedDay[] {
     .filter((day) => day.matches.length > 0)
 }
 
-function regionIdFromShortCode(shortCode: string): string {
-  for (const [id, region] of Object.entries(REGIONS)) {
-    if (region.shortCode === shortCode) return id
-  }
-  return shortCode
-}
 
 export function FeedClient({ initialFeed, userName, userEmail, userImage }: { initialFeed: FeedDay[]; userName?: string; userEmail?: string; userImage?: string }) {
   const [rawFeed, setRawFeed] = useState<FeedDay[]>(initialFeed)

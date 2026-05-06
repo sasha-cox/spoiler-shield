@@ -88,7 +88,7 @@ export function MatchCard({ match, isFollowed }: MatchCardProps) {
                 style={{ color: accentColor }}
               >
                 <span aria-hidden>{match.regionFlag}</span>
-                {match.region}
+                {match.regionLabel ?? match.region}
               </span>
             )}
             {match.region && (

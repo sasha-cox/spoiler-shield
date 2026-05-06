@@ -126,7 +126,7 @@ export function FilterBar({
                 }
               >
                 <span aria-hidden className="text-[13px] leading-none">{region.flag}</span>
-                {region.shortCode}
+                {region.label}
               </Button>
             )
           })}

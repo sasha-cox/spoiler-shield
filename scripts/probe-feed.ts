@@ -12,6 +12,7 @@ import { getRecentScheduledMatches } from '../lib/lolesports.js'
 import { resolveVodsForSchedule } from '../lib/match-vod-resolver.js'
 import { buildUnofficialMatches } from '../lib/unofficial-resolver.js'
 import { buildFeedFromSchedule } from '../lib/feed-utils.js'
+import { buildRegistryFromSchedule } from '../lib/team-registry.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -42,14 +43,16 @@ async function main() {
   console.log(`schedule: ${schedule.length} matches`)
   console.log(`uploads:  ${allUploads.length}`)
 
+  const registry = buildRegistryFromSchedule(schedule)
   const { byMatchId, orphans } = resolveVodsForSchedule(schedule, allUploads)
   console.log(`resolved: ${byMatchId.size} matches with VODs`)
   console.log(`orphans:  ${orphans.length} uploads`)
+  console.log(`registry: ${registry.canonicals.size} canonical teams`)
 
-  const unofficial = buildUnofficialMatches(orphans)
+  const unofficial = buildUnofficialMatches(orphans, registry)
   console.log(`unofficial: ${unofficial.length} parsed from orphans\n`)
 
-  const feed = buildFeedFromSchedule(schedule, byMatchId, unofficial)
+  const feed = buildFeedFromSchedule(schedule, byMatchId, registry, unofficial)
   console.log(`Feed: ${feed.length} days\n`)
   for (const day of feed.slice(0, 14)) {
     console.log(`══ ${day.date} (${day.label}) — ${day.matches.length} matches ══`)

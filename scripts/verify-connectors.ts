@@ -86,30 +86,9 @@ async function checkLolesports() {
   }
 }
 
-async function checkLeaguepedia() {
-  // Build-time only — used by `pnpm sync:teams` to refresh teams.generated.ts.
-  // Rate-limit responses are common (Fandom is aggressive with anonymous
-  // queries) and don't break the runtime app, so we warn instead of fail.
-  console.log('\nLeaguepedia Cargo API (build-time only — used by sync:teams):')
-  const url = 'https://lol.fandom.com/api.php?action=cargoquery&format=json&tables=Teams&fields=Name&where=Region%3D%22Korea%22&limit=1'
-  try {
-    const res = await fetch(url, { headers: { 'User-Agent': 'spoiler-shield-verify/1.0' } })
-    if (!res.ok) { console.log(`  ⚠ cargoquery probe  HTTP ${res.status} (non-fatal)`); return }
-    const data = await res.json()
-    if (data.error) {
-      console.log(`  ⚠ cargoquery probe  ${data.error.code} (non-fatal — try again later or run sync:teams from another IP)`)
-      return
-    }
-    pass('cargoquery probe', `returned ${(data.cargoquery ?? []).length} rows`)
-  } catch (e) {
-    console.log(`  ⚠ cargoquery probe  ${e} (non-fatal)`)
-  }
-}
-
 async function main() {
   await checkYoutube()
   await checkLolesports()
-  await checkLeaguepedia()
   console.log()
   if (failures > 0) {
     console.error(`${failures} failure${failures === 1 ? '' : 's'}.`)

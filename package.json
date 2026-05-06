@@ -9,7 +9,6 @@
     "lint": "eslint",
     "test": "vitest",
     "test:run": "vitest run",
-    "sync:teams": "tsx scripts/sync-teams.ts",
     "verify:connectors": "tsx scripts/verify-connectors.ts"
   },
   "dependencies": {

@@ -17,6 +17,11 @@
 
 import { leagueSlugFromTitle } from './leagues'
 import { channelByName, channelPriority } from './config'
+import {
+  NON_FULL_MATCH_TITLE,
+  UPLOAD_WINDOW_BEFORE_MS,
+  UPLOAD_WINDOW_AFTER_MS,
+} from './constants'
 import type { ScheduledMatch } from './lolesports'
 import type { RawUpload } from './feed-utils'
 
@@ -24,15 +29,6 @@ export interface VodCandidate {
   upload: RawUpload
   channelPriority: number
 }
-
-const UPLOAD_WINDOW_BEFORE_MS = 60 * 60 * 1000          // 1 hour pre-start
-const UPLOAD_WINDOW_AFTER_MS = 36 * 60 * 60 * 1000      // 36 hours after
-
-// Reject uploads whose titles flag them as not-the-full-match content. The
-// schedule join would otherwise happily attach a HIGHLIGHTS or recap video to
-// a real scheduled match, and that video's YouTube title (visible inside the
-// embed) would spoil the result.
-const NON_FULL_MATCH_TITLE = /\bhighlights\b|\brecap\b|\bpreview\b|\breaction\b|\bbest of\b|\bcompilation\b|\bmontage\b|\b#shorts\b|press conference|tier ?list/i
 
 function leagueHintForUpload(upload: RawUpload): string | null {
   const fromTitle = leagueSlugFromTitle(upload.title)

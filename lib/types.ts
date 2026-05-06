@@ -22,7 +22,8 @@ export interface FeedMatch {
   youtubeVideoId?: string  // Single VOD for the whole series (e.g., Caedrel costreams)
   channelName?: string     // Channel that uploaded the VOD
   watched?: boolean        // Whether this single VOD has been watched
-  region?: string          // Region short code (e.g., "LCK", "LEC")
+  region?: string          // Region ID (e.g., "KR", "EU") — used for filtering
+  regionLabel?: string     // Display label (league name for official, region label for unofficial)
   regionFlag?: string      // Flag emoji
   regionColor?: string     // Color for the badge
   publishedAt?: string     // ISO date string of when the VOD was uploaded

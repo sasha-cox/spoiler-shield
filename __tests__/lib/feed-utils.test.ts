@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { getDateLabel, buildFeedFromSchedule } from '@/lib/feed-utils'
+import { buildRegistryFromSchedule } from '@/lib/team-registry'
 import type { ScheduledMatch } from '@/lib/lolesports'
 import type { VodCandidate } from '@/lib/match-vod-resolver'
 
@@ -62,7 +63,7 @@ describe('buildFeedFromSchedule', () => {
       ['a', makeVod('vidA', 'Caedrel')],
       ['b', makeVod('vidB', 'LCK')],
     ])
-    const feed = buildFeedFromSchedule(schedule, vods)
+    const feed = buildFeedFromSchedule(schedule, vods, buildRegistryFromSchedule(schedule))
     expect(feed).toHaveLength(2)
     expect(feed[0].date).toBe('2026-04-22')
     expect(feed[0].matches[0].teamA).toBe('Hanwha Life Esports')
@@ -74,7 +75,7 @@ describe('buildFeedFromSchedule', () => {
 
   it('drops scheduled matches with no resolved VOD (cant watch what we cant find)', () => {
     const schedule = [makeScheduled({ id: 'a' })]
-    const feed = buildFeedFromSchedule(schedule, new Map())
+    const feed = buildFeedFromSchedule(schedule, new Map(), buildRegistryFromSchedule(schedule))
     expect(feed).toEqual([])
   })
 
@@ -94,7 +95,7 @@ describe('buildFeedFromSchedule', () => {
         },
       ],
     ])
-    const feed = buildFeedFromSchedule(schedule, vods)
+    const feed = buildFeedFromSchedule(schedule, vods, buildRegistryFromSchedule(schedule))
     expect(feed[0].matches[0].teamA).toBe('Hanwha Life Esports')
     expect(feed[0].matches[0].teamB).toBe('Nongshim RedForce')
   })
@@ -109,12 +110,12 @@ describe('buildFeedFromSchedule', () => {
       }),
     ]
     const vods = new Map([['a', makeVod('v', 'Caedrel')]])
-    const feed = buildFeedFromSchedule(schedule, vods)
+    const feed = buildFeedFromSchedule(schedule, vods, buildRegistryFromSchedule(schedule))
     expect(feed[0].matches[0].format).toBe('bo5')
     expect(feed[0].matches[0].eventName).toBe('LCK Spring Playoffs')
   })
 
   it('returns empty array when schedule is empty', () => {
-    expect(buildFeedFromSchedule([], new Map())).toEqual([])
+    expect(buildFeedFromSchedule([], new Map(), buildRegistryFromSchedule([]))).toEqual([])
   })
 })

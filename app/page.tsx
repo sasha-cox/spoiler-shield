@@ -1,35 +1,17 @@
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { FeedClient } from '@/components/FeedClient'
-import { getRecentUploads } from '@/lib/youtube'
-import { MONITORED_CHANNELS } from '@/lib/config'
-import { getRecentScheduledMatches } from '@/lib/lolesports'
-import { resolveVodsForSchedule } from '@/lib/match-vod-resolver'
-import { buildUnofficialMatches } from '@/lib/unofficial-resolver'
-import { buildFeedFromSchedule } from '@/lib/feed-utils'
-import type { RawUpload } from '@/lib/feed-utils'
+import { buildFeed } from '@/lib/build-feed'
 import type { FeedDay } from '@/lib/types'
 
 async function fetchFeed(): Promise<FeedDay[]> {
   const apiKey = process.env.YOUTUBE_API_KEY
   if (!apiKey) return []
-
-  const [schedule, uploadsByChannel] = await Promise.all([
-    getRecentScheduledMatches(28),
-    Promise.all(
-      MONITORED_CHANNELS.map(async (channel) => {
-        const uploads = await getRecentUploads(channel.youtubeChannelId, apiKey, 21)
-        return uploads.map((u) => ({ ...u, channelName: channel.name }))
-      }),
-    ),
-  ])
-
-  const allUploads: RawUpload[] = uploadsByChannel.flat()
-  const { byMatchId, orphans } = resolveVodsForSchedule(schedule, allUploads)
-  const unofficial = buildUnofficialMatches(orphans)
-  return buildFeedFromSchedule(schedule, byMatchId, unofficial)
+  return buildFeed(apiKey)
 }
 
+// Literal needed by Next's static analysis. Mirrors FEED_REVALIDATE_SECONDS
+// in lib/constants.ts — keep them in sync.
 export const revalidate = 180
 
 export default async function Home() {

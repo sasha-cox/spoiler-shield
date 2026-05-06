@@ -58,9 +58,9 @@ interface ScheduleResponse {
 }
 
 import { LEAGUES } from './leagues'
+import { SCHEDULE_CACHE_TTL_MS, SCHEDULE_LOOKBACK_DAYS } from './constants'
 
 let scheduleCache: { data: ScheduledMatch[]; timestamp: number } | null = null
-const SCHEDULE_CACHE_TTL_MS = 30 * 60 * 1000
 
 function sanitizeEvent(event: RawEvent): ScheduledMatch | null {
   if (event.type !== 'match') return null
@@ -118,7 +118,7 @@ async function fetchScheduleForLeague(leagueId: string, signal?: AbortSignal): P
  * within the last `sinceDays`. Cached for 30 minutes to keep us light on the
  * upstream API and our own cold-start latency.
  */
-export async function getRecentScheduledMatches(sinceDays: number = 28): Promise<ScheduledMatch[]> {
+export async function getRecentScheduledMatches(sinceDays: number = SCHEDULE_LOOKBACK_DAYS): Promise<ScheduledMatch[]> {
   if (scheduleCache && Date.now() - scheduleCache.timestamp < SCHEDULE_CACHE_TTL_MS) {
     return filterByDate(scheduleCache.data, sinceDays)
   }

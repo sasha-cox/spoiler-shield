@@ -1,8 +1,11 @@
-import { getRegion } from '@/lib/regions'
-import { normalizeTeamName } from '@/lib/team-aliases'
+import { REGIONS } from '@/lib/regions'
+import { leagueBySlug } from '@/lib/leagues'
+import { canonicalize } from '@/lib/team-registry'
+import { UNOFFICIAL_DEDUPE_WINDOW_DAYS } from '@/lib/constants'
 import type { ScheduledMatch } from '@/lib/lolesports'
 import type { VodCandidate } from '@/lib/match-vod-resolver'
 import type { FeedDay, FeedMatch } from '@/lib/types'
+import type { BuiltRegistryShape } from '@/lib/team-registry'
 
 export type FeedFormat = 'bo1' | 'bo3' | 'bo5'
 
@@ -39,39 +42,19 @@ function matchupKey(teamA: string, teamB: string): string {
 }
 
 /**
- * Schedule team names come from lolesports verbatim and are inconsistently
- * cased ("kt Rolster", "BILIBILI GAMING"). Map to our canonical name when we
- * know the team, otherwise smart-title-case as a fallback.
- */
-function canonicalizeTeam(name: string, code: string): string {
-  return (
-    normalizeTeamName(name) ??
-    normalizeTeamName(code) ??
-    smartTitleCase(name)
-  )
-}
-
-function smartTitleCase(name: string): string {
-  if (name === name.toLowerCase() || name === name.toUpperCase()) {
-    return name
-      .split(/\s+/)
-      .map((w) => (/^[A-Z0-9.]+$/.test(w) && w.length <= 4
-        ? w
-        : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()))
-      .join(' ')
-  }
-  return name
-}
-
-/**
  * Builds the spoiler-safe feed from canonical schedule data plus resolved VOD
  * uploads. Matches without a resolved VOD are dropped — we can't show a card
  * a user can't watch. Optionally folds in unofficial matches (showmatches,
  * creator tournaments) parsed from orphan uploads.
+ *
+ * Region is derived from the league's canonical regionId via leagueBySlug,
+ * not by title-parsing the event name — the schedule already tells us which
+ * region we're in.
  */
 export function buildFeedFromSchedule(
   schedule: ScheduledMatch[],
   vodsByMatchId: Map<string, VodCandidate>,
+  registry: BuiltRegistryShape,
   unofficialMatches: FeedMatch[] = [],
 ): FeedDay[] {
   const dayMap = new Map<string, FeedMatch[]>()
@@ -80,9 +63,11 @@ export function buildFeedFromSchedule(
     const vod = vodsByMatchId.get(scheduled.id)
     if (!vod) continue
 
-    const teamAName = canonicalizeTeam(scheduled.teamA.name, scheduled.teamA.code)
-    const teamBName = canonicalizeTeam(scheduled.teamB.name, scheduled.teamB.code)
-    const region = getRegion(teamAName, teamBName, scheduled.leagueName)
+    const teamAName = canonicalize(registry, scheduled.teamA.name, scheduled.teamA.code)
+    const teamBName = canonicalize(registry, scheduled.teamB.name, scheduled.teamB.code)
+    const league = leagueBySlug(scheduled.leagueSlug)
+    const regionId = league?.regionId ?? 'INT'
+    const region = REGIONS[regionId]
     const dateStr = dateOf(scheduled)
 
     const match: FeedMatch = {
@@ -98,7 +83,8 @@ export function buildFeedFromSchedule(
       channelName: vod.upload.channelName,
       watched: false,
       publishedAt: vod.upload.publishedAt.toISOString(),
-      region: region.shortCode,
+      region: regionId,
+      regionLabel: league?.name ?? region.label,
       regionFlag: region.flag,
       regionColor: region.color,
     }
@@ -108,7 +94,7 @@ export function buildFeedFromSchedule(
   }
 
   // Track each official matchup's date so unofficial entries for the same
-  // matchup within +/- 3 days get suppressed (covers schedule-vs-upload date
+  // matchup within +/- N days get suppressed (covers schedule-vs-upload date
   // skew when a coverage upload posts a day or two after the match).
   const officialMatchupDates = new Map<string, number[]>()
   for (const [dateStr, matches] of dayMap.entries()) {
@@ -120,14 +106,14 @@ export function buildFeedFromSchedule(
     }
   }
 
-  const DEDUP_WINDOW_MS = 3 * 24 * 60 * 60 * 1000
+  const dedupWindowMs = UNOFFICIAL_DEDUPE_WINDOW_DAYS * 24 * 60 * 60 * 1000
 
   for (const unofficial of unofficialMatches) {
     const date = unofficial.publishedAt?.slice(0, 10)
     if (!date) continue
     const t = Date.parse(date + 'T00:00:00Z')
     const conflicts = officialMatchupDates.get(matchupKey(unofficial.teamA, unofficial.teamB)) ?? []
-    if (conflicts.some((c) => Math.abs(c - t) <= DEDUP_WINDOW_MS)) continue
+    if (conflicts.some((c) => Math.abs(c - t) <= dedupWindowMs)) continue
     if (!dayMap.has(date)) dayMap.set(date, [])
     dayMap.get(date)!.push(unofficial)
   }
