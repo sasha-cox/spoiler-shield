@@ -67,19 +67,44 @@ async function checkYoutube() {
 
 async function checkLolesports() {
   console.log('\nlolesports.com schedule API:')
+
+  // First confirm getLeagues works and contains every slug we expect.
+  const leaguesUrl = new URL('https://esports-api.lolesports.com/persisted/gw/getLeagues')
+  leaguesUrl.searchParams.set('hl', 'en-US')
+  let slugToId: Map<string, string>
+  try {
+    const res = await fetch(leaguesUrl, { headers: { 'x-api-key': lolesportsKey } })
+    if (!res.ok) { fail('getLeagues', `${res.status}`); return }
+    const data = await res.json()
+    slugToId = new Map<string, string>()
+    for (const l of data.data?.leagues ?? []) {
+      if (l.slug && l.id) slugToId.set(l.slug, l.id)
+    }
+    pass('getLeagues', `discovered ${slugToId.size} leagues`)
+  } catch (e) {
+    fail('getLeagues', String(e))
+    return
+  }
+
+  // Then verify each tracked slug resolves to an ID and its schedule responds.
   for (const league of LEAGUES) {
+    const id = slugToId.get(league.slug)
+    if (!id) {
+      fail(league.slug, `not present in getLeagues (slug missing or renamed)`)
+      continue
+    }
     const url = new URL('https://esports-api.lolesports.com/persisted/gw/getSchedule')
     url.searchParams.set('hl', 'en-US')
-    url.searchParams.set('leagueId', league.lolesportsId)
+    url.searchParams.set('leagueId', id)
     try {
       const res = await fetch(url, { headers: { 'x-api-key': lolesportsKey } })
       if (!res.ok) {
-        fail(league.slug, `${res.status} for league ${league.lolesportsId}`)
+        fail(league.slug, `${res.status} for resolved id ${id}`)
         continue
       }
       const data = await res.json()
       const events = data?.data?.schedule?.events ?? []
-      pass(league.slug, `${events.length} scheduled events`)
+      pass(league.slug, `${events.length} scheduled events (id: ${id})`)
     } catch (e) {
       fail(league.slug, String(e))
     }

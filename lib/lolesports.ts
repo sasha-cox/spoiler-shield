@@ -57,10 +57,73 @@ interface ScheduleResponse {
   data?: { schedule?: { events?: RawEvent[]; pages?: { older?: string | null } } }
 }
 
+interface RawLeague {
+  id?: string
+  slug?: string
+  name?: string
+}
+
+interface LeaguesResponse {
+  data?: { leagues?: RawLeague[] }
+}
+
 import { LEAGUES } from './leagues'
 import { SCHEDULE_CACHE_TTL_MS, SCHEDULE_LOOKBACK_DAYS } from './constants'
 
 let scheduleCache: { data: ScheduledMatch[]; timestamp: number } | null = null
+
+/** Cache of slug → numeric league ID, resolved from `getLeagues`. The map
+ *  is keyed by slug (stable identifier from lolesports.com URLs); the value
+ *  is whatever ID Riot is currently using. Refreshed every 6 hours. */
+let leagueIdCache: { data: Map<string, string>; timestamp: number } | null = null
+const LEAGUE_ID_CACHE_TTL_MS = 6 * 60 * 60 * 1000
+
+async function fetchAllLeagues(): Promise<Map<string, string>> {
+  const url = new URL(`${API_BASE}/getLeagues`)
+  url.searchParams.set('hl', 'en-US')
+  const res = await fetch(url, { headers: { 'x-api-key': getApiKey() } })
+  if (!res.ok) throw new Error(`getLeagues failed: ${res.status}`)
+  const data: LeaguesResponse = await res.json()
+  const out = new Map<string, string>()
+  for (const league of data.data?.leagues ?? []) {
+    if (league.slug && league.id) out.set(league.slug, league.id)
+  }
+  return out
+}
+
+/**
+ * Resolves the slugs we want to track (from `LEAGUES`) to the numeric IDs
+ * the schedule API actually keys on. Cached for 6 hours; falls back to the
+ * stale cache on transient API failures. Returns the slugs we couldn't
+ * resolve as a separate field so callers can log them once.
+ */
+async function resolveLeagueIds(): Promise<Map<string, string>> {
+  if (leagueIdCache && Date.now() - leagueIdCache.timestamp < LEAGUE_ID_CACHE_TTL_MS) {
+    return leagueIdCache.data
+  }
+  try {
+    const all = await fetchAllLeagues()
+    const tracked = new Map<string, string>()
+    const missing: string[] = []
+    for (const league of LEAGUES) {
+      const id = all.get(league.slug)
+      if (id) tracked.set(league.slug, id)
+      else missing.push(league.slug)
+    }
+    if (missing.length > 0) {
+      console.warn(`lolesports getLeagues did not return IDs for: ${missing.join(', ')}`)
+    }
+    leagueIdCache = { data: tracked, timestamp: Date.now() }
+    return tracked
+  } catch (e) {
+    if (leagueIdCache) {
+      console.warn(`getLeagues failed (${e}); using stale cached IDs`)
+      return leagueIdCache.data
+    }
+    console.error(`getLeagues failed on cold start, no cache available — feed will be empty: ${e}`)
+    return new Map()
+  }
+}
 
 function sanitizeEvent(event: RawEvent): ScheduledMatch | null {
   if (event.type !== 'match') return null
@@ -123,8 +186,9 @@ export async function getRecentScheduledMatches(sinceDays: number = SCHEDULE_LOO
     return filterByDate(scheduleCache.data, sinceDays)
   }
 
+  const ids = await resolveLeagueIds()
   const all = (
-    await Promise.all(LEAGUES.map((l) => fetchScheduleForLeague(l.lolesportsId)))
+    await Promise.all([...ids.values()].map((id) => fetchScheduleForLeague(id)))
   ).flat()
 
   scheduleCache = { data: all, timestamp: Date.now() }
@@ -139,7 +203,8 @@ function filterByDate(matches: ScheduledMatch[], sinceDays: number): ScheduledMa
   })
 }
 
-/** Test/dev helper — clear the in-memory cache. */
+/** Test/dev helper — clear all in-memory caches. */
 export function clearScheduleCache(): void {
   scheduleCache = null
+  leagueIdCache = null
 }

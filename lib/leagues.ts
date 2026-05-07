@@ -1,52 +1,57 @@
 /**
- * Single source of truth for the leagues we track on lolesports.com.
+ * Single source of truth for the leagues we *want* to track on lolesports.com.
  *
- * Adding a league = one row here. The schedule client, the title-hint
- * resolver, and the region mapper all derive their configuration from this
- * table, so they cannot drift out of sync.
+ * What's hardcoded here: slug + display config (name, region, title hints).
+ * Slugs are the stable URL identifiers Riot publishes (`lolesports.com/lec`)
+ * and effectively never change.
+ *
+ * What's NOT hardcoded: the numeric `lolesportsId` Riot's API actually
+ * keys on. Those get resolved at runtime from `getLeagues` (see
+ * `lib/lolesports.ts → resolveLeagueIds`). If Riot rotates an ID, the
+ * pipeline picks it up automatically without a code change.
+ *
+ * Adding a league = one row here. Removing one = delete the row.
  */
 
 export type RegionId = 'KR' | 'EU' | 'NA' | 'CN' | 'BR' | 'INT'
 
 export interface LeagueConfig {
-  /** lolesports league slug (e.g. "lck") — also used as the canonical key */
+  /** lolesports league slug (e.g. "lck") — stable identifier from
+   *  lolesports.com URLs. The runtime ID is resolved from this. */
   slug: string
-  /** lolesports numeric league ID — the only thing the API actually keys on */
-  lolesportsId: string
-  /** Human-readable display name */
+  /** Human-readable display name. */
   name: string
   /** Region id from lib/regions.ts. International events bucket as 'INT'. */
   regionId: RegionId
   /** Tokens that, if any appear in a YouTube title (case-insensitive,
-   *  word-bounded), let the resolver guess this league. The first entry is
-   *  the canonical short code shown in the UI. */
+   *  word-bounded), let the resolver guess this league. */
   titleHints: string[]
 }
 
 export const LEAGUES: LeagueConfig[] = [
   // Tier-1
-  { slug: 'lck',          lolesportsId: '98767991310872058',  name: 'LCK',          regionId: 'KR', titleHints: ['LCK'] },
-  { slug: 'lec',          lolesportsId: '98767991302996019',  name: 'LEC',          regionId: 'EU', titleHints: ['LEC'] },
-  { slug: 'lcs',          lolesportsId: '98767991299243165',  name: 'LCS',          regionId: 'NA', titleHints: ['LCS'] },
-  { slug: 'lpl',          lolesportsId: '98767991314006698',  name: 'LPL',          regionId: 'CN', titleHints: ['LPL'] },
-  { slug: 'cblol-brazil', lolesportsId: '98767991332355509',  name: 'CBLOL',        regionId: 'BR', titleHints: ['CBLOL'] },
-  { slug: 'lcp',          lolesportsId: '113476371197627891', name: 'LCP',          regionId: 'INT', titleHints: ['LCP'] },
+  { slug: 'lck',          name: 'LCK',          regionId: 'KR',  titleHints: ['LCK'] },
+  { slug: 'lec',          name: 'LEC',          regionId: 'EU',  titleHints: ['LEC'] },
+  { slug: 'lcs',          name: 'LCS',          regionId: 'NA',  titleHints: ['LCS'] },
+  { slug: 'lpl',          name: 'LPL',          regionId: 'CN',  titleHints: ['LPL'] },
+  { slug: 'cblol-brazil', name: 'CBLOL',        regionId: 'BR',  titleHints: ['CBLOL'] },
+  { slug: 'lcp',          name: 'LCP',          regionId: 'INT', titleHints: ['LCP'] },
   // Tier-2
-  { slug: 'nlc',                    lolesportsId: '105266098308571975', name: 'NLC',              regionId: 'EU',  titleHints: ['NLC'] },
-  { slug: 'lfl',                    lolesportsId: '105266103462388553', name: 'LFL',              regionId: 'EU',  titleHints: ['LFL'] },
-  { slug: 'primeleague',            lolesportsId: '105266091639104326', name: 'Prime League',     regionId: 'EU',  titleHints: ['Prime League', 'PRM'] },
-  { slug: 'hitpoint_masters',       lolesportsId: '105266106309666619', name: 'Hitpoint Masters', regionId: 'EU',  titleHints: ['Hitpoint'] },
-  { slug: 'lck_challengers_league', lolesportsId: '98767991335774713',  name: 'LCK Challengers',  regionId: 'KR',  titleHints: ['LCK Challengers', 'LCKC'] },
-  { slug: 'nacl',                   lolesportsId: '109511549831443335', name: 'NACL',             regionId: 'NA',  titleHints: ['NACL'] },
-  { slug: 'cd',                     lolesportsId: '105549980953490846', name: 'CD',               regionId: 'BR',  titleHints: ['Circuito Desafiante', 'CD'] },
-  { slug: 'ljl-japan',              lolesportsId: '98767991349978712',  name: 'LJL',              regionId: 'INT', titleHints: ['LJL'] },
-  { slug: 'vcs',                    lolesportsId: '107213827295848783', name: 'VCS',              regionId: 'INT', titleHints: ['VCS'] },
+  { slug: 'nlc',                    name: 'NLC',              regionId: 'EU',  titleHints: ['NLC'] },
+  { slug: 'lfl',                    name: 'LFL',              regionId: 'EU',  titleHints: ['LFL'] },
+  { slug: 'primeleague',            name: 'Prime League',     regionId: 'EU',  titleHints: ['Prime League', 'PRM'] },
+  { slug: 'hitpoint_masters',       name: 'Hitpoint Masters', regionId: 'EU',  titleHints: ['Hitpoint'] },
+  { slug: 'lck_challengers_league', name: 'LCK Challengers',  regionId: 'KR',  titleHints: ['LCK Challengers', 'LCKC'] },
+  { slug: 'nacl',                   name: 'NACL',             regionId: 'NA',  titleHints: ['NACL'] },
+  { slug: 'cd',                     name: 'CD',               regionId: 'BR',  titleHints: ['Circuito Desafiante', 'CD'] },
+  { slug: 'ljl-japan',              name: 'LJL',              regionId: 'INT', titleHints: ['LJL'] },
+  { slug: 'vcs',                    name: 'VCS',              regionId: 'INT', titleHints: ['VCS'] },
   // International
-  { slug: 'worlds',       lolesportsId: '98767975604431411',  name: 'Worlds',       regionId: 'INT', titleHints: ['Worlds'] },
-  { slug: 'msi',          lolesportsId: '98767991325878492',  name: 'MSI',          regionId: 'INT', titleHints: ['MSI'] },
-  { slug: 'first_stand',  lolesportsId: '113464388705111224', name: 'First Stand',  regionId: 'INT', titleHints: ['First Stand'] },
-  { slug: 'emea_masters', lolesportsId: '100695891328981122', name: 'EMEA Masters', regionId: 'INT', titleHints: ['EMEA Masters', 'EM'] },
-  { slug: 'americas_cup', lolesportsId: '116096325848746167', name: 'Americas Cup', regionId: 'INT', titleHints: ['Americas Cup'] },
+  { slug: 'worlds',       name: 'Worlds',       regionId: 'INT', titleHints: ['Worlds'] },
+  { slug: 'msi',          name: 'MSI',          regionId: 'INT', titleHints: ['MSI'] },
+  { slug: 'first_stand',  name: 'First Stand',  regionId: 'INT', titleHints: ['First Stand'] },
+  { slug: 'emea_masters', name: 'EMEA Masters', regionId: 'INT', titleHints: ['EMEA Masters', 'EM'] },
+  { slug: 'americas_cup', name: 'Americas Cup', regionId: 'INT', titleHints: ['Americas Cup'] },
 ]
 
 const bySlug = new Map(LEAGUES.map((l) => [l.slug, l]))
