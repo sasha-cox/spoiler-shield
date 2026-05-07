@@ -14,7 +14,7 @@
  */
 
 import { REGIONS, type Region } from './regions'
-import { channelPriority } from './config'
+import { brandPriority } from './config'
 import { findTeam, type BuiltRegistryShape } from './team-registry'
 import { NON_FULL_MATCH_TITLE } from './constants'
 import type { RawUpload } from './feed-utils'
@@ -113,7 +113,7 @@ export function buildUnofficialMatches(
     const date = upload.publishedAt.toISOString().slice(0, 10)
     const dedupKey = [parsed.teamA, parsed.teamB].sort().join('|') + '|' + date
     const region = regionForUnofficial(registry, parsed.teamA, parsed.teamB)
-    const priority = channelPriority(upload.channelName)
+    const priority = brandPriority(upload.channelName)
 
     const candidate: FeedMatch = {
       id: `unofficial:${upload.videoId}`,

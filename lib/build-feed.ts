@@ -26,7 +26,9 @@ export async function buildFeed(apiKey: string): Promise<FeedDay[]> {
     Promise.all(
       MONITORED_CHANNELS.map(async (channel) => {
         const uploads = await getRecentUploads(channel.youtubeChannelId, apiKey, UPLOADS_LOOKBACK_DAYS)
-        return uploads.map((u) => ({ ...u, channelName: channel.name }))
+        // Attribute each upload to its brand, not the underlying YouTube channel —
+        // the user never sees that Caedrel posted via @CaedrelLive vs @Caedrel.
+        return uploads.map((u) => ({ ...u, channelName: channel.brand }))
       }),
     ),
   ])

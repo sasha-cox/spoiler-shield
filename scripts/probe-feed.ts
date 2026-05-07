@@ -34,7 +34,7 @@ async function main() {
     Promise.all(
       MONITORED_CHANNELS.map(async (channel) => {
         const ups = await getRecentUploads(channel.youtubeChannelId, apiKey!, 21)
-        return ups.map((u) => ({ ...u, channelName: channel.name }))
+        return ups.map((u) => ({ ...u, channelName: channel.brand }))
       }),
     ),
   ])

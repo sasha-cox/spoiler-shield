@@ -38,7 +38,7 @@ export const UNOFFICIAL_DEDUPE_WINDOW_DAYS = 3
  *
  * If you add a new keyword, both resolvers pick it up automatically.
  */
-export const NON_FULL_MATCH_TITLE = /\bhighlights\b|\brecap\b|\bpreview\b|\breaction\b|\bbest of\b|\bcompilation\b|\bmontage\b|#shorts\b|press conference|tier ?list|\bvods? ?recap\b/i
+export const NON_FULL_MATCH_TITLE = /\bhighlights\b|\brecap\b|\bpreview\b|\breact(?:s|ion|ing)?\b|\bbest of\b|\bcompilation\b|\bmontage\b|#shorts\b|press conference|tier ?list|\bvods? ?recap\b|\bdocumentary\b|\bdocu\b|\binterview\b|\banalysis\b|\bbreakdown\b/i
 
 // ── Rate limiting (/api/feed) ──────────────────────────────────
 export const RATE_LIMIT_WINDOW_MS = 60 * 1000

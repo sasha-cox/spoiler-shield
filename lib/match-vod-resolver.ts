@@ -16,7 +16,7 @@
  */
 
 import { leagueSlugFromTitle } from './leagues'
-import { channelByName, channelPriority } from './config'
+import { channelByBrand, brandPriority } from './config'
 import {
   NON_FULL_MATCH_TITLE,
   UPLOAD_WINDOW_BEFORE_MS,
@@ -33,7 +33,8 @@ export interface VodCandidate {
 function leagueHintForUpload(upload: RawUpload): string | null {
   const fromTitle = leagueSlugFromTitle(upload.title)
   if (fromTitle) return fromTitle
-  return channelByName(upload.channelName)?.leagueSlug ?? null
+  // upload.channelName carries the brand name post brand-grouping.
+  return channelByBrand(upload.channelName)?.leagueSlug ?? null
 }
 
 function teamMatchesInTitle(team: ScheduledMatch['teamA'], title: string): boolean {
@@ -103,7 +104,7 @@ export function resolveVodsForSchedule(
       orphans.push(upload)
       continue
     }
-    const priority = channelPriority(upload.channelName)
+    const priority = brandPriority(upload.channelName)
     const existing = byMatchId.get(match.id)
     if (!existing || priority < existing.channelPriority) {
       byMatchId.set(match.id, { upload, channelPriority: priority })

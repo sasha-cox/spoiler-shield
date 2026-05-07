@@ -8,10 +8,13 @@ import { MatchFeed } from '@/components/MatchFeed'
 import { markWatched, getWatchedVods } from '@/lib/watched-store'
 import { followTeam, unfollowTeam, getFollowedTeams } from '@/lib/follow-store'
 import { REGIONS } from '@/lib/regions'
-import { MONITORED_CHANNELS } from '@/lib/config'
+import { MONITORED_BRANDS } from '@/lib/config'
+import { leagueBySlug } from '@/lib/leagues'
+import { getPreferences, savePreferences, type Preferences } from '@/lib/preferences-store'
+import { SettingsModal } from '@/components/SettingsModal'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import { Shield, RefreshCw, LogOut } from 'lucide-react'
+import { Shield, RefreshCw, LogOut, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { FeedDay, FeedFilters, FilterAction, FeedFormat } from '@/lib/types'
 
@@ -60,8 +63,40 @@ function applyWatchedState(days: FeedDay[], watched: Set<string>): FeedDay[] {
   }))
 }
 
-const ALL_CHANNELS: string[] = MONITORED_CHANNELS.map((c) => c.name)
+const ALL_BRANDS: string[] = MONITORED_BRANDS
 const ALL_REGIONS = Object.values(REGIONS)
+
+/**
+ * Apply user subscription preferences to the feed: drop matches whose brand,
+ * league, or region the user has hidden in settings. Runs before the in-
+ * session FilterBar narrowing.
+ */
+function applyPreferences(days: FeedDay[], prefs: Preferences): FeedDay[] {
+  if (
+    prefs.hiddenBrands.size === 0 &&
+    prefs.hiddenLeagues.size === 0 &&
+    prefs.hiddenRegions.size === 0
+  ) {
+    return days
+  }
+  return days
+    .map((day) => ({
+      ...day,
+      matches: day.matches.filter((match) => {
+        if (match.channelName && prefs.hiddenBrands.has(match.channelName)) return false
+        if (match.region && prefs.hiddenRegions.has(match.region)) return false
+        // We don't carry leagueSlug on FeedMatch, but the league name is in the
+        // event name. Best-effort: match by region label since each league
+        // has a distinct primary label per region.
+        for (const slug of prefs.hiddenLeagues) {
+          const league = leagueBySlug(slug)
+          if (league && match.eventName.toUpperCase().includes(league.name.toUpperCase())) return false
+        }
+        return true
+      }),
+    }))
+    .filter((day) => day.matches.length > 0)
+}
 
 function extractFormats(days: FeedDay[]): FeedFormat[] {
   const set = new Set<FeedFormat>()
@@ -112,18 +147,35 @@ export function FeedClient({ initialFeed, userName, userEmail, userImage }: { in
   const [filters, dispatch] = useReducer(filterReducer, initialFilters)
   const [refreshError, setRefreshError] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [preferences, setPreferences] = useState<Preferences>({
+    hiddenBrands: new Set(),
+    hiddenLeagues: new Set(),
+    hiddenRegions: new Set(),
+  })
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   useEffect(() => {
     setWatchedSet(getWatchedVods())
     setFollowedSet(getFollowedTeams())
+    setPreferences(getPreferences())
   }, [])
 
-  const availableFormats = useMemo(() => extractFormats(rawFeed), [rawFeed])
-  const teamNames = useMemo(() => extractTeamNames(rawFeed), [rawFeed])
+  const handlePreferencesChange = useCallback((next: Preferences) => {
+    setPreferences(next)
+    savePreferences(next)
+  }, [])
+
+  const subscribedFeed = useMemo(
+    () => applyPreferences(rawFeed, preferences),
+    [rawFeed, preferences],
+  )
+
+  const availableFormats = useMemo(() => extractFormats(subscribedFeed), [subscribedFeed])
+  const teamNames = useMemo(() => extractTeamNames(subscribedFeed), [subscribedFeed])
 
   const feedWithWatched = useMemo(
-    () => applyWatchedState(rawFeed, watchedSet),
-    [rawFeed, watchedSet],
+    () => applyWatchedState(subscribedFeed, watchedSet),
+    [subscribedFeed, watchedSet],
   )
 
   const filteredFeed = useMemo(
@@ -219,6 +271,16 @@ export function FeedClient({ initialFeed, userName, userEmail, userImage }: { in
               <RefreshCw className={cn('size-4', isRefreshing && 'animate-spin')} />
             </Button>
 
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setSettingsOpen(true)}
+              aria-label="Subscriptions"
+              className="text-zinc-500 hover:text-gold hover:bg-gold/10"
+            >
+              <Settings className="size-4" />
+            </Button>
+
             <div className="flex items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-950/80 pl-1 pr-1 py-0.5">
               <Avatar size="sm" className="ring-1 ring-gold/30">
                 {userImage ? (
@@ -245,9 +307,16 @@ export function FeedClient({ initialFeed, userName, userEmail, userImage }: { in
         </div>
       </header>
 
+      <SettingsModal
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        preferences={preferences}
+        onChange={handlePreferencesChange}
+      />
+
       <div className="relative px-4 pt-4">
         <FilterBar
-          channels={ALL_CHANNELS}
+          channels={ALL_BRANDS}
           regions={ALL_REGIONS}
           formats={availableFormats}
           filters={filters}
